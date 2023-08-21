@@ -469,17 +469,6 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa):
 
     elif args.bfactor:  # score by bfactor
         bvals = [b for b in bfactors]
-
-        j = 0
-        '''
-        The below code is just to test bfactor option
-        for pdbs where the bfactors are all zero
-        '''
-        new_bvals = []
-        for i in range(len(bvals)):
-            new_bvals.append((bvals[i]+j)%7)
-            j+=1
-        bvals = new_bvals
   
     elif args.conservation_score: # score by conservation score     
         bvals = []
@@ -488,8 +477,6 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa):
 
     else: # solid color
         bvals = [i for i in range(len(msa[0]))]
-
-    print("REMOVE ADDITIONAL BFACTOR CODE")
 
     if len(bvals) == len(pdbseq):
         # remove extra residues
