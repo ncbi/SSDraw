@@ -7,7 +7,7 @@ import matplotlib.path as mpath
 import matplotlib
 import numpy as np
 from Bio import pairwise2
-import sys, os, string, math
+import sys, os, string, math, re
 from matplotlib import rcParams
 import argparse
 from Bio.PDB import PDBParser
@@ -17,25 +17,22 @@ from Bio import AlignIO
 import matplotlib.colors as mcolors
 from matplotlib.colors import ListedColormap
 from Bio.SeqUtils import seq1
-import sys
-import re
+import warnings
 
-def DavidCM():
-    
-    hexcolors = ['#d3d3d3', '#ff1493', '#00ff7f', '#ff7f00', '#1e90ff']
-    colors_rgb = [matplotlib.colors.hex2color(hexcolor) for hexcolor in hexcolors]
-    chimera_colormap = matplotlib.colors.ListedColormap(colors_rgb, name='chimera')
-
-    return chimera_colormap
-
-def HTH_CM():
-    hexcolors = ['#000000']
-    colors_rgb = [matplotlib.colors.hex2color(hexcolor) for hexcolor in hexcolors]
-    hth_colormap = matplotlib.colors.ListedColormap(colors_rgb, name='chimera')
-
-    return hth_colormap
+def gap_sequence(seq, extra_gaps):
+    # seq can be a list or a string, anything that can be indexed
+    # extra gaps is a list of length two [x,y],
+    # where x is the number of characters to remove from the beginning
+    # and y the number of characters to remove from the end
+    new_seq = seq
+    if extra_gaps[1] != 0:
+        new_seq = new_seq[:-extra_gaps[1]]
+    return new_seq[extra_gaps[0]:]
 
 def NormalizeData(data):
+    if np.min(data) == np.max(data):
+        warnings.warn("Warning: scores are the same for all residues")
+        return data
     return (data - np.min(data)) / (np.max(data) - np.min(data))
 
 def coords2path(coord_set1):
@@ -59,7 +56,7 @@ def build_loop(loop,idx,ssidx,linelen,nlines,loop_coords,prev_ss,next_ss, z=1,cl
     if loop[0] != 0 and prev_ss != "B":
         i0 = loop[0]-1
     else:
-        i0 = loop[0]+0.1
+        i0 = loop[0]
     i1 = loop[1]+2
     if loop[1] == linelen-1:
         i1 += 2
@@ -96,8 +93,6 @@ def build_strand(strand,idx,ssidx,strand_coords,next_ss,z=1,clr='r',imagemat=0,s
 
 
 def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,z=1,bkg=(0.195,0,0.051),imagemat=0):
-
-    helices = []
 
     i = helix
     l = i[1]-i[0]+1
@@ -190,7 +185,6 @@ def SS_breakdown(ss):
 
         if ss[i] not in curSS or i == len(ss)-1:
 
-            #print(i, ss[i],last_ss,curSS)
             
             if 'E' in curSS and jend-jstart+1 >= 3:
                 strand.append((jstart,jend))
@@ -208,13 +202,11 @@ def SS_breakdown(ss):
                 loop.append((jstart,jend))
                 ss_bounds.append((jstart,jend))
                 ss_order.append('L')
-                #print(loop)
                 last_ss = 'loop'
             elif '-' in curSS:
                 if jend < jstart:
                     jend = jstart
                 ssbreak.append((jstart,jend))
-                #print(ssbreak)
                 ss_bounds.append((jstart,jend))
                 ss_order.append('B')
                 last_ss = 'break'
@@ -226,11 +218,9 @@ def SS_breakdown(ss):
                     loop = loop[0:-1]
                     ss_bounds = ss_bounds[0:-1]
                     ss_order = ss_order[0:-1]
-                    #print(loop)
                 loop.append((jstart,jend))
                 ss_bounds.append((jstart,jend))
                 ss_order.append('L')
-                #print(loop)
                 last_ss = 'loop'
             else:
                 if jend < jstart:
@@ -257,13 +247,13 @@ def updateSS(ss,seq,alignment):
         else:
             ss_u += ss[j]
             j += 1
-            #if j == len(ss):  # check if reached the end of secondary structure annotation
+            # if j == len(ss):  # check if reached the end of secondary structure annotation
             #    return ss_u
 
     return ss_u
 
 
-def SS_align(alignment,ID,seq,ss,start_subregion=None,end_subregion=None):
+def SS_align(alignment,ID,seq,ss,i_start,i_end):
 
     a_seq = ''
     seq_found = 0
@@ -280,17 +270,11 @@ def SS_align(alignment,ID,seq,ss,start_subregion=None,end_subregion=None):
         if seq_found and i[0] != '>':
             a_seq += i
     
-    '''if start_subregion:
-        a_seq = a_seq[start_subregion:]
-    if end_subregion:
-        a_seq = a_seq[:end_subregion+1]'''
-    i_start = 0
-    i_end = len(a_seq)-1   
-    if start_subregion:
-        i_start = start_subregion
-    if end_subregion:
-        i_end = end_subregion 
-    a_seq = a_seq[i_start:i_end+1]
+    if i_end != 0:
+        i_end = len(a_seq)-i_end-1
+
+    a_seq = gap_sequence(a_seq, [i_start,i_end])
+
 
     a = pairwise2.align.localxs(seq,a_seq,-1,-0.5)
 
@@ -333,12 +317,6 @@ def SS_align(alignment,ID,seq,ss,start_subregion=None,end_subregion=None):
 
     return SS_updated_new, a_new, extra_gaps, i_start, i_end
 
-    if extra_gaps[1] != 0:
-        SS_updated_new = SS_updated[:-extra_gaps[1]]
-        a_new = a_new[:-extra_gaps[1]]
-
-    return SS_updated_new[extra_gaps[0]:], a_new[extra_gaps[0]:],extra_gaps,i_start,i_end
-
 def plot_coords(coords,z=10):
 
     coords_f1, instructions1 = coords2path(coords)
@@ -370,24 +348,35 @@ def run_dssp(pdb_path, id, chain):
     #sys.exit()
     return [ss_seq,aa_seq]
 
-def convert2horiz(dssp_file):
+def convert2horiz(dssp_file, pdbseq):
+
     ss_seq = ""
     aa_seq = ""
 
     with open(dssp_file, "r") as f:
         lines = f.readlines()
 
-    start_read = False
-    for line in lines:
-        if start_read:
-            if line[13] == "!":
-                start_read = False
-                continue
-            ss_seq += line[16]
-            aa_seq += line[13]
-        if line.split()[0] == "#":
-            start_read = True
+    dssp_ext = dssp_file.split(".")[-1]
 
+    if dssp_ext == "horiz":
+        ss_seq = lines[0].rstrip('\n')
+        aa_seq = lines[1].rstrip('\n')   
+    
+    elif dssp_ext == "dssp":
+        start_read = False
+        for line in lines:
+            if start_read:
+                if line[13] == "!":
+                    start_read = False
+                    continue
+                ss_seq += line[16]
+                aa_seq += line[13]
+            if line.split()[0] == "#":
+                start_read = True  
+    
+    else:
+        raise Exception("DSSP file extension not recognized: must be in .dssp or .horiz format")
+    
     return [ss_seq,aa_seq]
 
 def score_column(msa_col, threshold=0):
@@ -412,93 +401,7 @@ def score_column(msa_col, threshold=0):
     
     return conservation_count/len(msa_col)
 
-def gap_sequence(seq, extra_gaps):
-    # seq can be a list or a string, anything that can be indexed
-    # extra gaps is a list of length two [x,y],
-    # where x is the number of characters to remove from the beginning
-    # and y the number of characters to remove from the end
-    new_seq = seq
-    if extra_gaps[1] != 0:
-        new_seq = new_seq[:-extra_gaps[1]]
-    return new_seq[extra_gaps[0]:]
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", help="(required) alignment file in fasta format")
-    parser.add_argument("-p", help="(required) pdb file")
-    parser.add_argument("-o", help="(required) name for output file")
-    parser.add_argument("-n", help="(required) id of the protein in the alignment file")
-    parser.add_argument("--dssp", default=None, help="secondary structure annotation in DSSP format. If this option is not provided, SSDraw will compute secondary structure from the given PDB file with DSSP.")
-    parser.add_argument("--chain_id", default="A", help="chain id to use in pdb. Defaults to the first chain.")
-    parser.add_argument("--color_map", default=["inferno"], nargs="*", help="color map to use for heat map")
-    parser.add_argument("--scoring_file",default=None,help="custom scoring file for alignment")
-    parser.add_argument("--color", default="white", help="color for the image. Can be a color name (eg. white, black, green), or a hex code")
-    parser.add_argument("-conservation_score", action='store_true', help="score alignment by conservation score")
-    parser.add_argument("--output_file_type", default="png")
-    parser.add_argument("-bfactor", action='store_true', help="score by b factor")
-    parser.add_argument("-mview", action="store_true", help="color by mview color map")
-    parser.add_argument("--dpi", default=600, help="dpi to use for final plot")
-    parser.add_argument("--start", default=None)
-    parser.add_argument("--end", default=None)
-
-    args = parser.parse_args()
-
-    try:
-        args.aln = args.f
-        args.pdb = args.p
-        args.output = args.o
-        args.name = args.n
-    except:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-
-    # preface run
-    id = args.name  
-    chain_id = args.chain_id
-    print("\n\nRunning for: "+id)
-
-    pdbseq = ''
-    if args.dssp:
-        # get secondary structure from pre-existing DSSP annotation
-        f = convert2horiz(args.dssp)
-        pdbseq = f[1]
-    else:
-        # run the dssp executable
-        f = run_dssp(args.pdb, id, chain_id) 
-        # read in amino acid sequence from PDB
-        p = PDBParser()
-        bfactors = []
-        structure = p.get_structure(id, args.pdb)
-        model = structure[0]
-        for chain in model:
-            if chain.get_id() == args.chain_id:
-                
-                for residue in chain:
-                    for atom in residue:
-                        if atom.name == "CA":
-                            bfactors.append(atom.bfactor)
-                            pdbseq += seq1(residue.get_resname())
-                            break
-
-    nlines = 1
-
-    salign = open(args.aln).read().splitlines() 
-
-    if args.start != None and args.end != None:
-        if int(args.start) >= int(args.end):
-            raise Exception("Your start location cannot be greater than the end location")
-    if args.start != None:
-        args.start = int(args.start)
-    if args.end != None:
-        args.end = int(args.end)
-
-    #####Align secondary structure to match input sequence alignment
-
-    ss_wgaps,seq_wgaps,extra_gaps,i_start,i_end = SS_align(salign,args.name,f[1],f[0],args.start,args.end)
-
-    #Parse color
-    #Select colormap
+def parse_color(args,seq_wgaps,pdbseq,bfactors,msa):
     CMAP = ""
     if args.color in mcolors.BASE_COLORS.keys() or args.color in mcolors.CSS4_COLORS.keys() or args.color in mcolors.XKCD_COLORS.keys():
         CMAP = ListedColormap([args.color])
@@ -509,30 +412,11 @@ if __name__ == '__main__':
             CMAP = args.color_map[0]
         else:
             CMAP = ListedColormap(args.color_map)
-    
-    # custom color map
-    #CMAP = ListedColormap(["black","red", "orange"])
 
     #bvals are to make the colormap; taken from input PDB
     bvals = []
-
-    #Break down secondary structure classifications in to continuous
-    #chunks of helix, strand, and coil
-    SS = ss_wgaps
-
-    strand,loop,helix,ss_break,ss_order,ss_bounds = SS_breakdown(SS)
-    
-    pres = 0
-    msa = AlignIO.read(open(args.aln), "fasta")
-    if args.start != None and args.end != None:
-        msa = [a[args.start:args.end+1] for a in msa]
-    elif args.start != None:
-        msa = [a[args.start:] for a in msa]
-    elif args.end != None:
-        msa = [a[:args.end+1] for a in msa]
     
     if args.mview:
-        #pdbseq = f[1]
         mview_colors = {"A": 0, "G": 0, "I": 0, "L": 0, "M": 0, "P": 0, "V": 0,
                         "F": 1, "H": 1, "W": 1, "Y": 1,
                         "K": 2, "R": 2,
@@ -560,7 +444,6 @@ if __name__ == '__main__':
                         bvals[j] -= 1
 
         CMAP = ListedColormap(mview_color_map)
-        #print(len(bvals))
 
     elif args.scoring_file: # use custom scoring by residue
         # read in scoring file
@@ -569,13 +452,11 @@ if __name__ == '__main__':
         with open(args.scoring_file, "r") as g:
             lines = g.readlines()
         for line in lines:
-            #pdbseq+=line.split()[0]
             scoring_seq += line.split()[0]
             bvals_tmp.append(float(line.split()[1]))
 
         score_align = pairwise2.align.localxs(pdbseq,scoring_seq,-1,-0.5)
-        #print(score_align[0])
-        #sys.exit()
+
         j = 0
         for i in range(len(score_align[0][1])):
             if score_align[0][0][i] != "-":
@@ -588,18 +469,7 @@ if __name__ == '__main__':
 
     elif args.bfactor:  # score by bfactor
         bvals = [b for b in bfactors]
-        '''p = PDBParser()
-        structure = p.get_structure(id, args.pdb)
-        model = structure[0]
-        for chain in model:
-            if chain.get_id() == args.chain_id:
-                
-                for residue in chain:
-                    for atom in residue:
-                        if atom.name == "CA":
-                            bvals.append(atom.bfactor)
-                            #pdbseq += seq1(residue.get_resname())
-                            break'''
+
         j = 0
         '''
         The below code is just to test bfactor option
@@ -610,56 +480,26 @@ if __name__ == '__main__':
             new_bvals.append((bvals[i]+j)%7)
             j+=1
         bvals = new_bvals
-
   
     elif args.conservation_score: # score by conservation score     
-        #pdbseq = f[1]
         bvals = []
         for i in range(len(msa[0])):
             bvals.append(score_column([msa[j][i] for j in range(len(msa))]))
 
-    else:
-        # solid color
-        #pdbseq = f[1]
+    else: # solid color
         bvals = [i for i in range(len(msa[0]))]
 
-
-    #Align PDB sequence with dssp sequence
-    pdbalign = pairwise2.align.localxs(pdbseq,f[1],-1,-0.5)
-
-    print(len(pdbseq))
-    print(len(bvals))
-    print(len(msa[0]))
-    #sys.exit()
-
-    # case 1:
-    # len(bvals) == len(msa) if bvals were scored by alignment position
-    # in this case, don't need to do anything else
-    # 
-    # case 2:
-    # len(bvals) == len(pdbseq) if bvals were scored by aa residue
-
-    # what's left to do:
-    # truncate pdbseq and bvals by extra_gaps DONE
-    # then change the following if statement to realign by-residue bvals to the MSA DONE
-    # replace clunky stuff in code with gap_sequence function
+    print("REMOVE ADDITIONAL BFACTOR CODE")
 
     if len(bvals) == len(pdbseq):
         # remove extra residues
         pdbseq = gap_sequence(pdbseq, extra_gaps)
         bvals = gap_sequence(bvals, extra_gaps)
 
-        fstring = []
         bvalsf = []
-        fidx = 0
-        pidx = 0
-        ninsert = 0
-        n = 0
-        o = 0
         j = 0
         for i in range(len(ss_order)):
             #Make secondary structure chunk
-            fstring += [ss_order[i]]*(ss_bounds[i][1]-ss_bounds[i][0]+1)
             #If chunk is a chain break, assign each break to the lowest B-factor
             #Else assign each position of aligned secondary structure to its respective
             #CA B-factor and iterate through list of B-factors so that register is
@@ -673,59 +513,93 @@ if __name__ == '__main__':
         
         bvals = bvalsf
 
-    always_false = False
-    if always_false:
-    #if len(bvals) < len(msa[0]):
-        # some scoring systems are by residue, so we need to align
-        # by-residue bvalues to the multiple sequence alignment
+    return CMAP, bvals
 
-        # first, align bvalues to dssp
-        bvals2 = []
-        j = 0
-        '''for i in range(len(pdbalign[0][0])):
-            if pdbalign[0][0][i] != '-':
-                bvals2.append(bvals[j])
-                j += 1
-            elif pdbalign[0][1][i] != '-':
-                bvals2.append(min(bvals))'''
-        
-        # align bvalues to seq_wgaps
-        '''for i in range(len(seq_wgaps)):
-            if seq_wgaps[i] != '-':
-                bvals2.append(bvals[j])
-            else:
-                bvals2.append(min(bvals))'''
+def read_pdb(id,args):
+    pdbseq = ''
+    p = PDBParser()
+    bfactors = []
+    structure = p.get_structure(id, args.pdb)
+    model = structure[0]
+    for chain in model:
+        if chain.get_id() == args.chain_id:
+            
+            for residue in chain:
+                for atom in residue:
+                    if atom.name == "CA":
+                        bfactors.append(atom.bfactor)
+                        pdbseq += seq1(residue.get_resname())
+                        break
+    return bfactors, pdbseq
 
-        '''bvals = bvals2[extra_gaps[0]:]
-        if extra_gaps[1] != 0:
-            bvals = bvals[:-extra_gaps[1]]'''
-        # this above code doesn't work.
-        # if there are extra gaps, generally len(bvals) will not even
-        # be larger than len(msa), so this if statement won't even be true.
+if __name__ == '__main__':
 
-        fstring = []
-        bvalsf = []
-        fidx = 0
-        pidx = 0
-        ninsert = 0
-        n = 0
-        o = 0
-        j = 0
-        for i in range(len(ss_order)):
-            #Make secondary structure chunk
-            fstring += [ss_order[i]]*(ss_bounds[i][1]-ss_bounds[i][0]+1)
-            #If chunk is a chain break, assign each break to the lowest B-factor
-            #Else assign each position of aligned secondary structure to its respective
-            #CA B-factor and iterate through list of B-factors so that register is
-            #maintained
-            if ss_order[i] == 'B':
-                bvalsf += [min(bvals)]*(ss_bounds[i][1]-ss_bounds[i][0]+1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", help="(required) alignment file in fasta format")
+    parser.add_argument("-p", help="(required) pdb file")
+    parser.add_argument("-o", help="(required) name for output file")
+    parser.add_argument("-n", help="(required) id of the protein in the alignment file")
+    parser.add_argument("--dssp", default=None, help="secondary structure annotation in DSSP format. If this option is not provided, SSDraw will compute secondary structure from the given PDB file with DSSP.")
+    parser.add_argument("--chain_id", default="A", help="chain id to use in pdb. Defaults to the first chain.")
+    parser.add_argument("--color_map", default=["inferno"], nargs="*", help="color map to use for heat map")
+    parser.add_argument("--scoring_file",default=None,help="custom scoring file for alignment")
+    parser.add_argument("--color", default="white", help="color for the image. Can be a color name (eg. white, black, green), or a hex code")
+    parser.add_argument("-conservation_score", action='store_true', help="score alignment by conservation score")
+    parser.add_argument("--output_file_type", default="png")
+    parser.add_argument("-bfactor", action='store_true', help="score by b factor")
+    parser.add_argument("-mview", action="store_true", help="color by mview color map")
+    parser.add_argument("--dpi", default=600, type=int, help="dpi to use for final plot")
+    parser.add_argument("--start", default=0, type=int)
+    parser.add_argument("--end", default=0,type=int)
 
-            else:
-                bvalsf += bvals[j:j+ss_bounds[i][1]-ss_bounds[i][0]+1]
-                j += ss_bounds[i][1]-ss_bounds[i][0]+1
-        
-        bvals = bvalsf
+    args = parser.parse_args()
+
+    if not args.f or not args.p or not args.o or not args.n:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    args.aln = args.f
+    args.pdb = args.p
+    args.output = args.o
+    args.name = args.n
+
+    # preface run
+    id = args.name  
+    chain_id = args.chain_id
+    print("\nRunning for: "+id)
+
+    # read in amino acid sequence from PDB
+    bfactors, pdbseq = read_pdb(id,args)
+
+    if args.dssp:
+        # get secondary structure from pre-existing DSSP annotation
+        '''f = convert2horiz(args.dssp)
+        pdbseq = f[1]'''
+        f = convert2horiz(args.dssp,pdbseq)
+        #print(f)
+        #sys.exit()
+    else:
+        # run the dssp executable
+        f = run_dssp(args.pdb, id, chain_id) 
+        #print(f)
+
+    nlines = 1
+    salign = open(args.aln).read().splitlines() 
+
+    if args.start > args.end:
+        raise Exception("--start cannot be greater than --end")
+
+    #####Align secondary structure to match input sequence alignment
+    ss_wgaps,seq_wgaps,extra_gaps,i_start,i_end = SS_align(salign,args.name,f[1],f[0],args.start,args.end)
+
+    #Break down secondary structure classifications in to continuous
+    #chunks of helix, strand, and coil
+    strand,loop,helix,ss_break,ss_order,ss_bounds = SS_breakdown(ss_wgaps)
+    
+    msa = [gap_sequence(a, [i_start, i_end]) for a in AlignIO.read(open(args.aln), "fasta")]
+
+    #Parse color and scoring args
+    CMAP, bvals = parse_color(args,seq_wgaps,pdbseq,bfactors,msa)
 
     mat = np.tile(NormalizeData(bvals), (100,1))
 
@@ -733,14 +607,11 @@ if __name__ == '__main__':
     sz = 0
     c = 'none'
     bc = 'none'
-    sz = 0
 
     #set sizes of SS chunks
     ss_prev = 0
     for i in range(len(ss_order)):
         
-        #print ((ss_bounds[i],ss_order[i],ss_bounds[i][0]/6.0,ss_bounds[i][0]/6.0-ss_prev))
-
         if ss_order[i] == 'H':
             ss_prev = ss_bounds[i][1]/6.0+1/6.0
         else:
@@ -755,7 +626,6 @@ if __name__ == '__main__':
     elif ss_order[-1] == 'B':
         sz = (ss_bounds[-1][1])/6.0
 
-
     #Plot secondary structure chunks
     strand_coords = []
     loop_coords = []
@@ -764,13 +634,7 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(ncols=1, figsize=(25,2+1.5*(nlines-1)))
     
-    '''    for i in range(len(ss_order)):
-        if ss_order[i] == 'L':
-            pass
-            build_loop(ss_bounds[i],0,1,len(SS),1,loop_coords,z=0,clr=c,mat=mat,size=sz)'''
-
     for i in range(len(ss_order)):
-
         prev_ss = None
         next_ss = None
         if i != 0:
@@ -779,12 +643,10 @@ if __name__ == '__main__':
             next_ss = ss_order[i+1]
 
         if ss_order[i] == 'L':
-            pass
-            build_loop(ss_bounds[i],0,1,len(SS),1,loop_coords,prev_ss,next_ss,z=0,clr=c,mat=mat,size=sz)
+            build_loop(ss_bounds[i],0,1,len(ss_wgaps),1,loop_coords,prev_ss,next_ss,z=0,clr=c,mat=mat,size=sz)
         elif ss_order[i] == 'H':
             build_helix(ss_bounds[i],0,1,helix_coords1,helix_coords2,z=i,clr=c,bkg=bc,imagemat=mat,size=sz)
         elif ss_order[i] == 'E':
-            pass
             build_strand(ss_bounds[i],0,1,strand_coords,next_ss,z=i,clr=c,imagemat=mat,size=sz)
 
     if len(strand_coords) != 0:
@@ -797,17 +659,5 @@ if __name__ == '__main__':
 
     plt.axis('off')
     ax.set_aspect(0.5)
-
-    #rcParams['font.family'] = 'monospace'
-    #rcParams['font.size'] = 9.65 # for ubiquitin
-    #plt.annotate(seq_wgaps, [0,0.5])
-    #plt.annotate(ss_wgaps, [0,3])
-    #rcParams['font.size'] = 20 # for id label
-    #plt.annotate(id, [0,1.5])
-    print(ss_order)
-    print(ss_bounds)
-    #print(len(ss_order))
-    #print(len(ss_bounds))
-    #sys.exit()
         
-    plt.savefig(args.output+'.'+args.output_file_type,bbox_inches='tight',dpi=int(args.dpi),transparent=True)
+    plt.savefig(args.output+'.'+args.output_file_type,bbox_inches='tight',dpi=args.dpi,transparent=True)
