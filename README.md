@@ -67,6 +67,6 @@ If you want SSDraw to draw only a portion of your alignment, you can specify the
 
 Example 5: Choose subregion of alignment to run SSDraw on
 ```
-python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation_cropped -conservation_score --start 75 --end 132
+python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation_cropped -conservation_score --start 80 --end 132
 ```
 ![Example 5](imgs/1ndd_conservation_cropped.png)
