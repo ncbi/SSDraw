@@ -70,3 +70,6 @@ Example 5: Choose subregion of alignment to run SSDraw on
 python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation_cropped -conservation_score --start 80 --end 132
 ```
 ![Example 5](imgs/1ndd_conservation_cropped.png)
+
+### Running on multiple pdbs:
+In order to rapidly generate multiple images with SSDraw, we recommend writing shell scripts comprised of commands like those shown in the above examples. For examples of such shell scripts, see one of the shell scripts in /figures/.
