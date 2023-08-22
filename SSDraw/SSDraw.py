@@ -17,7 +17,7 @@ from Bio import AlignIO
 import matplotlib.colors as mcolors
 from matplotlib.colors import ListedColormap
 from Bio.SeqUtils import seq1
-import warnings
+import warnings, textwrap
 
 def gap_sequence(seq, extra_gaps):
     # seq can be a list or a string, anything that can be indexed
@@ -280,7 +280,7 @@ def SS_align(alignment,ID,seq,ss,i_start,i_end):
 
     # check if the dssp annotation has any extra residues not in the fasta alignment
     if a[0][1] != a_seq:
-        print("extra residues found\n")
+        print("extra residues in pdb found\n")
 
     # check how many gap marks are at the end and beginning of the original alignment
     # (a_seq) and compare to the amount found in a[0][1]
@@ -519,15 +519,85 @@ def read_pdb(id,args):
                         break
     return bfactors, pdbseq
 
+description='''
+----------------
+
+SSDraw is a program that generates publication-quality protein secondary structure diagrams from three-dimensional protein structures. To depict relationships between secondary structure and other protein features, diagrams can be colored by conservation score, B-factor, or custom scoring.
+
+SSDraw also has a colab notebook available at https://github.com/ethanchen1301/SSDraw.
+
+
+
+Installation:
+
+SSDraw requires the biopython module:
+        pip install biopython
+
+SSDraw also requires the DSSP program to be installed in order to generate secondary structure annotations.
+        sudo apt-get install dssp
+
+Alternatively, you can install DSSP either through conda (conda install -c salilab dssp), or you can follow the instructions on their github page to make a local installation: 
+https://github.com/cmbi/dssp.
+
+
+
+Instructions:
+SSDraw requires 4 arguments:
+1. --fasta: the file name sequence or alignment file in fasta format.
+2. --name: the id of the sequence in the fasta file corresponding to your protein of interest.
+3. --pdb: the file name of the pdb file of your protein
+4. --output: the output file name to use
+
+Example 1:
+    python3 ../SSDraw.py --fasta 1ndd.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_out
+        
+Coloring options:
+SSDraw uses a gradient to color each position in the alignment by a certain score. The user can choose which scoring system to use, and they can also choose which colormap.
+
+Scoring: 
+-conservation_score: score each position in the alignment by conservation score.
+-bfactor: score each residue in the pdb by bfactor
+-scoring_file: score each residue by a custom scoring file prepared by the user
+-mview: color each residue by the mview coloring system
+
+Example 2: Score by conservation
+    python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation -conservation_score
+
+Example 3: Score by bfactor
+    python3 ../SSDraw.py --fasta 1ndd.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_bfactor -bfactor
+
+Choosing a colormap:
+The default colormap for SSDraw is inferno. The user can select one of the matplotlib library color maps or simply list a set of colors they'd like to use with the --color_map option. Alternatively, the user can select a single color with the --color option and SSDraw will use that color on the whole image.
+
+Example 4: Custom scoring file with custom color map
+    python3 ../SSDraw.py --fasta 2kdl.fasta --name 2kdl --pdb 2kdl.pdb --output 2kdl_out --scoring_file 2kdl_scoring.txt --color_map black cyan  
+
+DSSP files:
+Normally, SSDraw will generate a DSSP annotation from the PDB file, but if you have a DSSP file you would like to use, you can upload it and input the file name in Options.
+
+--start and --end:
+If you want SSDraw to draw only a portion of your alignment, you can specify the start and/or end points using the --start and --end options respectively. The argument for these options correspond to the index of the alignment position, not to the residue position numbers.
+
+Example 5: Choose subregion of alignment to run SSDraw on
+    python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation_cropped -conservation_score --start 80 --end 132
+----------------
+
+Running on multiple pdbs:
+In order to rapidly generate multiple images with SSDraw, we recommend writing shell scripts comprised of commands like those shown in the above examples. For examples of such shell scripts, see one of the shell scripts in /figures/.
+'''
+
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", help="(required) alignment file in fasta format")
-    parser.add_argument("-p", help="(required) pdb file")
-    parser.add_argument("-o", help="(required) name for output file")
-    parser.add_argument("-n", help="(required) id of the protein in the alignment file")
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description = description,
+        epilog="")
+    parser.add_argument("-f", "--fasta", help="(required) sequence/alignment file in fasta format")
+    parser.add_argument("-p", "--pdb", help="(required) pdb file")
+    parser.add_argument("-n", "--name", help="(required) id of the protein in the alignment file")
+    parser.add_argument("-o", "--output", help="(required) name for output file")
     parser.add_argument("--dssp", default=None, help="secondary structure annotation in DSSP format. If this option is not provided, SSDraw will compute secondary structure from the given PDB file with DSSP.")
-    parser.add_argument("--chain_id", default="A", help="chain id to use in pdb. Defaults to the first chain.")
+    parser.add_argument("--chain_id", default="A", help="chain id to use in pdb. Defaults to chain A.")
     parser.add_argument("--color_map", default=["inferno"], nargs="*", help="color map to use for heat map")
     parser.add_argument("--scoring_file",default=None,help="custom scoring file for alignment")
     parser.add_argument("--color", default="white", help="color for the image. Can be a color name (eg. white, black, green), or a hex code")
@@ -541,14 +611,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not args.f or not args.p or not args.o or not args.n:
+    if not args.fasta or not args.pdb or not args.output or not args.name:
         parser.print_help(sys.stderr)
         sys.exit(1)
-
-    args.aln = args.f
-    args.pdb = args.p
-    args.output = args.o
-    args.name = args.n
 
     # preface run
     id = args.name  
@@ -571,7 +636,7 @@ if __name__ == '__main__':
         #print(f)
 
     nlines = 1
-    salign = open(args.aln).read().splitlines() 
+    salign = open(args.fasta).read().splitlines() 
 
     if args.start > args.end:
         raise Exception("--start cannot be greater than --end")
@@ -583,7 +648,7 @@ if __name__ == '__main__':
     #chunks of helix, strand, and coil
     strand,loop,helix,ss_break,ss_order,ss_bounds = SS_breakdown(ss_wgaps)
     
-    msa = [gap_sequence(a, [i_start, i_end]) for a in AlignIO.read(open(args.aln), "fasta")]
+    msa = [gap_sequence(a, [i_start, i_end]) for a in AlignIO.read(open(args.fasta), "fasta")]
 
     #Parse color and scoring args
     CMAP, bvals = parse_color(args,seq_wgaps,pdbseq,bfactors,msa)
@@ -647,4 +712,5 @@ if __name__ == '__main__':
     plt.axis('off')
     ax.set_aspect(0.5)
         
+    print("Saving output to {:}.{:}...".format(args.output, args.output_file_type))
     plt.savefig(args.output+'.'+args.output_file_type,bbox_inches='tight',dpi=args.dpi,transparent=True)
