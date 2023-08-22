@@ -524,7 +524,7 @@ description='''
 
 SSDraw is a program that generates publication-quality protein secondary structure diagrams from three-dimensional protein structures. To depict relationships between secondary structure and other protein features, diagrams can be colored by conservation score, B-factor, or custom scoring.
 
-SSDraw also has a colab notebook available at https://github.com/ethanchen1301/SSDraw.
+SSDraw also has a colab notebook available at https://github.com/ethanchen1301/SSDraw/blob/main/SSDraw.ipynb
 
 
 
@@ -625,15 +625,10 @@ if __name__ == '__main__':
 
     if args.dssp:
         # get secondary structure from pre-existing DSSP annotation
-        '''f = convert2horiz(args.dssp)
-        pdbseq = f[1]'''
         f = convert2horiz(args.dssp,pdbseq)
-        #print(f)
-        #sys.exit()
     else:
         # run the dssp executable
         f = run_dssp(args.pdb, id, chain_id) 
-        #print(f)
 
     nlines = 1
     salign = open(args.fasta).read().splitlines() 
