@@ -1,6 +1,8 @@
 ![header](imgs/1ndd_conservation_cropped.png)
 # SSDraw
+SSDraw is a program that generates publication-quality protein secondary structure diagrams from three-dimensional protein structures. To depict relationships between secondary structure and other protein features, diagrams can be colored by conservation score, B-factor, or custom scoring.
 
+SSDraw also has a colab notebook available at https://github.com/ethanchen1301/SSDraw/SSDraw.ipynb.
 ## Installation
 
 SSDraw requires the Biopython module to be installed.
