@@ -65,7 +65,7 @@ python3 ../SSDraw.py --fasta 2kdl.fasta --name 2kdl --pdb 2kdl.pdb --output 2kdl
 ### DSSP files:
 Normally, SSDraw will generate a DSSP annotation from the PDB file, but if you have a DSSP file you would like to use, you can upload it and input the file name in Options.
 
-# choosing subregion:
+### choosing subregion:
 If you want SSDraw to draw only a portion of your alignment, you can specify the start and/or end points using the --start and --end options respectively. The argument for these options correspond to the index of the alignment position, not to the residue position numbers.
 
 Example 5: Choose subregion of alignment to run SSDraw on
