@@ -15,7 +15,7 @@ pip install matplotlib
 SSDraw also requires DSSP to be installed:
 
 ```bash
-conda install -c salilab
+conda install -c salilab dssp
 ```
 
 Alternatively, you can install DSSP either through apt-get (sudo apt-get install dssp), or you can follow the instructions on their github page to make a local installation: 
