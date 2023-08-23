@@ -50,8 +50,12 @@ def coords2path(coord_set1):
 
     return coords_f1, instructions1
 
-def build_loop(loop,idx,ssidx,linelen,nlines,loop_coords,prev_ss,next_ss, z=1,clr='r',mat=0,size=75):
-
+def build_loop(loop,idx,ssidx,linelen,nlines,loop_coords,prev_ss,next_ss, z=1,clr='r',mat=0,size=75): 
+    
+    # if loop is smaller than 3 residues and has gaps on both sides, don't draw it
+    if prev_ss == "B" and next_ss == "B" and loop[1]-loop[0] < 2:
+        return None
+    
     i0 = loop[0]
     if loop[0] != 0 and prev_ss != "B":
         i0 = loop[0]-1
@@ -556,14 +560,14 @@ SSDraw uses a gradient to color each position in the alignment by a certain scor
 
 Scoring: 
 -conservation_score: score each position in the alignment by conservation score.
--bfactor: score each residue in the pdb by bfactor
+-bfactor: score each residue in the pdb by B-factor
 -scoring_file: score each residue by a custom scoring file prepared by the user
 -mview: color each residue by the mview coloring system
 
 Example 2: Score by conservation
     python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation -conservation_score
 
-Example 3: Score by bfactor
+Example 3: Score by B-factor
     python3 ../SSDraw.py --fasta 1ndd.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_bfactor -bfactor
 
 Choosing a colormap:
@@ -603,7 +607,7 @@ if __name__ == '__main__':
     parser.add_argument("--color", default="white", help="color for the image. Can be a color name (eg. white, black, green), or a hex code")
     parser.add_argument("-conservation_score", action='store_true', help="score alignment by conservation score")
     parser.add_argument("--output_file_type", default="png")
-    parser.add_argument("-bfactor", action='store_true', help="score by b factor")
+    parser.add_argument("-bfactor", action='store_true', help="score by B-factor")
     parser.add_argument("-mview", action="store_true", help="color by mview color map")
     parser.add_argument("--dpi", default=600, type=int, help="dpi to use for final plot")
     parser.add_argument("--start", default=0, type=int)
