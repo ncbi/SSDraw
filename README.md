@@ -39,7 +39,7 @@ SSDraw uses a gradient to color each position in the alignment by a certain scor
 
 ### Scoring: 
 -conservation_score: score each position in the alignment by conservation score.
--bfactor: score each residue in the pdb by bfactor
+-bfactor: score each residue in the pdb by B-factor
 -scoring_file: score each residue by a custom scoring file prepared by the user
 -mview: color each residue by the mview coloring system
 
@@ -50,7 +50,7 @@ python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1
 ![Example 2](imgs/1ndd_conservation.png)
 Note: for more on how the --start and --end options work, see [choosing a subregion](#choosing-a-subregion).
 
-#### Example 3: Score by bfactor
+#### Example 3: Score by B-factor
 ```
 python3 ../SSDraw.py --fasta 1ndd.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_bfactor -bfactor
 ```
