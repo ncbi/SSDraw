@@ -45,9 +45,10 @@ SSDraw uses a gradient to color each position in the alignment by a certain scor
 
 Example 2: Score by conservation
 ```
-python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation -conservation_score
+python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation -conservation_score --start 80 --end 132
 ```
 ![Example 2](imgs/1ndd_conservation.png)
+See ![--start and --end](#--start-and---end)
 Example 3: Score by bfactor
 ```
 python3 ../SSDraw.py --fasta 1ndd.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_bfactor -bfactor
