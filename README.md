@@ -48,7 +48,7 @@ Example 2: Score by conservation
 python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation -conservation_score --start 80 --end 132
 ```
 ![Example 2](imgs/1ndd_conservation.png)
-See [choosing a subregion](#subregion:)
+See [choosing a subregion](#Foo)
 Example 3: Score by bfactor
 ```
 python3 ../SSDraw.py --fasta 1ndd.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_bfactor -bfactor
@@ -65,7 +65,7 @@ python3 ../SSDraw.py --fasta 2kdl.fasta --name 2kdl --pdb 2kdl.pdb --output 2kdl
 ### DSSP files:
 Normally, SSDraw will generate a DSSP annotation from the PDB file, but if you have a DSSP file you would like to use, you can upload it and input the file name in Options.
 
-# subregion:
+# Foo:
 If you want SSDraw to draw only a portion of your alignment, you can specify the start and/or end points using the --start and --end options respectively. The argument for these options correspond to the index of the alignment position, not to the residue position numbers.
 
 Example 5: Choose subregion of alignment to run SSDraw on
