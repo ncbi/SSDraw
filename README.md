@@ -1,4 +1,4 @@
-![header](imgs/1ndd_conservation_cropped.png)
+![header](imgs/1ndd_conservation.png)
 # SSDraw
 SSDraw is a program that generates publication-quality protein secondary structure diagrams from three-dimensional protein structures. To depict relationships between secondary structure and other protein features, diagrams can be colored by conservation score, B-factor, or custom scoring.
 
