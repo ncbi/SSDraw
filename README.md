@@ -5,19 +5,20 @@ SSDraw is a program that generates publication-quality protein secondary structu
 SSDraw also has a colab notebook available at https://colab.research.google.com/github/ethanchen1301/SSDraw/blob/main/SSDraw.ipynb
 ## Installation
 
-SSDraw requires the Biopython module to be installed.
+SSDraw requires the Biopython and matplotlib modules to be installed.
 
 ```bash
 pip install biopython
+pip install matplotlib
 ```
 
 SSDraw also requires DSSP to be installed:
 
 ```bash
-sudo apt-get install dssp
+conda install -c salilab
 ```
 
-Alternatively, you can install DSSP either through conda (conda install -c salilab dssp), or you can follow the instructions on their github page to make a local installation: 
+Alternatively, you can install DSSP either through apt-get (sudo apt-get install dssp), or you can follow the instructions on their github page to make a local installation: 
 https://github.com/cmbi/dssp.
 
 ## Instructions
