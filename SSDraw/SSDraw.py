@@ -183,13 +183,11 @@ def SS_breakdown(ss):
             else:
                 last_ss = 'loop'
             continue
-
+        
         if ss[i] in curSS:
             jend = i
-
+        
         if ss[i] not in curSS or i == len(ss)-1:
-
-            
             if 'E' in curSS and jend-jstart+1 >= 3:
                 strand.append((jstart,jend))
                 ss_bounds.append((jstart,jend))
@@ -233,9 +231,11 @@ def SS_breakdown(ss):
                 ss_bounds.append((jstart,jend))
                 ss_order.append('L')
                 last_ss = 'loop'
+            
 
             jstart = i
             curSS = SS_equivalencies[ss[i]]
+
     return strand,loop,helix, ssbreak, ss_order, ss_bounds
 
 
@@ -349,7 +349,6 @@ def run_dssp(pdb_path, id, chain):
             else:      
                 ss_seq+=dssp[key][2]
       
-    #sys.exit()
     return [ss_seq,aa_seq]
 
 def convert2horiz(dssp_file, pdbseq):
@@ -487,21 +486,19 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa):
         pdbseq = gap_sequence(pdbseq, extra_gaps)
         bvals = gap_sequence(bvals, extra_gaps)
 
-        bvalsf = []
         j = 0
-        for i in range(len(ss_order)):
-            #Make secondary structure chunk
-            #If chunk is a chain break, assign each break to the lowest B-factor
-            #Else assign each position of aligned secondary structure to its respective
-            #CA B-factor and iterate through list of B-factors so that register is
-            #maintained
-            if ss_order[i] == 'B':
-                bvalsf += [min(bvals)]*(ss_bounds[i][1]-ss_bounds[i][0]+1)
-
-            else:
-                bvalsf += bvals[j:j+ss_bounds[i][1]-ss_bounds[i][0]+1]
-                j += ss_bounds[i][1]-ss_bounds[i][0]+1
-        
+        bvalsf = []
+        bvals_align = pairwise2.align.localxs(seq_wgaps,pdbseq,-1,-0.5)
+        if bvals_align[0][0] != seq_wgaps:
+            print("Error in alignment or pdb sequence")
+            sys.exit()
+        for i in range(len(seq_wgaps)):
+            if seq_wgaps[i] == "-" or bvals_align[0][1][i] == "-":
+                bvalsf.append(min(bvals))
+            elif seq_wgaps[i] == bvals_align[0][1][i]:
+                bvalsf.append(bvals[j])
+                j+=1
+    
         bvals = bvalsf
 
     return CMAP, bvals
