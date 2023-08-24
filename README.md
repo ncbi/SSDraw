@@ -12,7 +12,7 @@ pip install biopython
 pip install matplotlib
 ```
 
-SSDraw also requires DSSP to be installed:
+SSDraw also requires DSSP to be installed in order to generate secondary structure annotations:
 
 ```bash
 conda install -c salilab dssp
@@ -40,9 +40,9 @@ SSDraw uses a gradient to color each position in the alignment by a certain scor
 
 ### Scoring: 
 -conservation_score: score each position in the alignment by conservation score.
--bfactor: score each residue in the pdb by B-factor
--scoring_file: score each residue by a custom scoring file prepared by the user
--mview: color each residue by the mview coloring system
+-bfactor: score each residue in the pdb by B-factor.
+-scoring_file: score each residue by a custom scoring file prepared by the user.
+-mview: color each residue by the mview coloring system.
 
 #### Example 2: score by conservation
 ```
@@ -57,7 +57,7 @@ python3 ../SSDraw.py --fasta 1ndd.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd
 ```
 ![Example 3](imgs/1ndd_bfactor.png)
 ### Choosing a colormap:
-The default colormap for SSDraw is inferno. The user can select one of the matplotlib library color maps or simply list a set of colors they'd like to use with the --color_map option. Alternatively, the user can select a single color with the --color option and SSDraw will use that color on the whole image.
+The default colormap for SSDraw is inferno. The user can select one of the matplotlib library color maps or simply list a space delimited set of colors they'd like to use with the --color_map option. Alternatively, the user can select a single color with the --color option and SSDraw will use that color on the whole image.
 
 #### Example 4: Custom scoring file with custom color map
 ```
@@ -68,7 +68,7 @@ python3 ../SSDraw.py --fasta 2kdl.fasta --name 2kdl --pdb 2kdl.pdb --output 2kdl
 Normally, SSDraw will generate a DSSP annotation from the PDB file, but if you have a DSSP file you would like to use, you can upload it and input the file name in Options.
 
 ### Choosing a subregion:
-If you want SSDraw to draw only a portion of your alignment, you can specify the start and/or end points using the --start and --end options respectively. The argument for these options correspond to the index of the alignment position, not to the residue position numbers. See [example 2](#example-2-score-by-conservation)
+If you want SSDraw to draw only a portion of your alignment, you can specify the start and/or end points using the --start and --end options respectively. The argument for these options correspond to the index of the alignment position, not to the residue position numbers. See [example 2](#example-2-score-by-conservation).
 
 ### Running on multiple pdbs:
-In order to rapidly generate multiple images with SSDraw, we recommend writing shell scripts comprised of commands like those shown in the above examples. For examples of such shell scripts, see one of the shell scripts in /figures/.
+In order to rapidly generate multiple images with SSDraw, we recommend writing shell scripts comprised of commands like those shown in the above examples. For examples of such a shell script, see [here](SSDraw/figures/ubiquitin/run_ssdraw.sh).
