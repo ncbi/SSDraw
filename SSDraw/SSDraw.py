@@ -100,8 +100,9 @@ def build_strand(strand,idx,ssidx,strand_coords,next_ss,z=1,clr='r',
                  imagemat=0,size=75):
 
     delta = 0 if next_ss == None else 1
-    arrow=mpatch.FancyArrow(strand[0]/6.0,-5.5*idx+2.0*ssidx,
-                            (strand[1]-strand[0]+delta)/6.0,0,
+
+    arrow=mpatch.FancyArrow(((strand[0]+delta-1)/6.0),-5.5*idx+2.0*ssidx,
+                            (strand[1]-strand[0]+1)/6.0,0,
                             width=1.0,fc=clr,linewidth=0.5,ec='k',
                             zorder=z,head_width=2.0,
                             length_includes_head=True,head_length=2.0/6.0)
