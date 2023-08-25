@@ -10,6 +10,7 @@ SSDraw requires the Biopython and matplotlib modules to be installed.
 ```bash
 pip install biopython
 pip install matplotlib
+pip install numpy
 ```
 
 SSDraw also requires DSSP to be installed in order to generate secondary structure annotations:
