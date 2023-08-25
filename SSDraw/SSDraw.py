@@ -18,6 +18,8 @@ import matplotlib.colors as mcolors
 from matplotlib.colors import ListedColormap
 from Bio.SeqUtils import seq1
 import warnings, textwrap
+from Bio import BiopythonWarning
+from Bio.PDB.PDBExceptions import PDBConstructionWarning
 
 def gap_sequence(seq, extra_gaps):
     # seq can be a list or a string, anything that can be indexed
@@ -50,15 +52,18 @@ def coords2path(coord_set1):
 
     return coords_f1, instructions1
 
-def build_loop(loop,idx,ssidx,linelen,nlines,loop_coords,prev_ss,next_ss, z=1,clr='r',mat=0,size=75): 
+def build_loop(loop,idx,ssidx,loop_coords,linelen,nlines,prev_ss,next_ss,
+               z=1,clr='r',mat=0,size=75): 
     
-    # if loop is smaller than 3 residues and has gaps on both sides, don't draw it
+    # if loop is smaller than 3 residues and has gaps on both sides, don't draw 
     if prev_ss == "B" and next_ss == "B" and loop[1]-loop[0] < 2:
-        return None
+        return
     
     i0 = loop[0]
     if loop[0] != 0 and prev_ss != "B":
         i0 = loop[0]-1
+    elif i0 == 0:
+        i0 = 0.06
     else:
         i0 = loop[0]
     i1 = loop[1]+2
@@ -73,22 +78,29 @@ def build_loop(loop,idx,ssidx,linelen,nlines,loop_coords,prev_ss,next_ss, z=1,cl
     if next_ss == None:
         o=-4.1
 
-    rectangle = mpatch.Rectangle((i0/6.0,-0.25-5.5*idx+2.0*ssidx),(i1-i0+o)/6.0,0.5,
+    rectangle = mpatch.Rectangle((i0/6.0,-0.25-5.5*idx+2.0*ssidx),
+                                 (i1-i0+o)/6.0,0.5,
                                   fc=clr,ec='k',zorder=0)
 
     plt.gca().add_patch(rectangle)
 
-    loop_coords.append(rectangle.get_xy())
-    
-    if isinstance(mat,np.ndarray):
-        im = plt.imshow(mat,extent=[0.0,size,0.5,3.0],cmap=CMAP,interpolation='none',zorder=0)
-        im.set_clip_path(rectangle)
+    xy = rectangle.get_xy()
+    w = rectangle.get_width()
+    h = rectangle.get_height()
+    loop_coords.append(np.array([[xy[0],xy[1]],
+                                 [xy[0],xy[1]+h],
+                                 [xy[0]+w,xy[1]+h],
+                                 [xy[0]+w,xy[1]],
+                                 [xy[0],xy[1]]]))
 
-def build_strand(strand,idx,ssidx,strand_coords,next_ss,z=1,clr='r',imagemat=0,size=75):
+def build_strand(strand,idx,ssidx,strand_coords,next_ss,z=1,clr='r',
+                 imagemat=0,size=75):
 
     delta = 0 if next_ss == None else 1
-    arrow=mpatch.FancyArrow(strand[0]/6.0,-5.5*idx+2.0*ssidx,(strand[1]-strand[0]+delta)/6.0,0,
-                            width=1.0,fc=clr,linewidth=0.5,ec='k',zorder=z,head_width=2.0,
+    arrow=mpatch.FancyArrow(strand[0]/6.0,-5.5*idx+2.0*ssidx,
+                            (strand[1]-strand[0]+delta)/6.0,0,
+                            width=1.0,fc=clr,linewidth=0.5,ec='k',
+                            zorder=z,head_width=2.0,
                             length_includes_head=True,head_length=2.0/6.0)
                                 
     plt.gca().add_patch(arrow)
@@ -96,13 +108,16 @@ def build_strand(strand,idx,ssidx,strand_coords,next_ss,z=1,clr='r',imagemat=0,s
     strand_coords.append(arrow.get_xy())
 
 
-def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,z=1,bkg=(0.195,0,0.051),imagemat=0):
+def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,
+                z=1,bkg=(0.195,0,0.051),imagemat=0):
 
     i = helix
     l = i[1]-i[0]+1
-    points = [[i[0]/6.0,-0.25-5.5*idx+2.0*ssidx],[i[0]/6.0+1.0/6,0.75-5.5*idx+2.0*ssidx],\
-              [i[0]/6.0+2.0/6,0.75-5.5*idx+2.0*ssidx],[i[0]/6.0+1.0/6,-0.25-5.5*idx+2.0*ssidx]]
-    hlx = plt.Polygon(points,fc=clr,ec='k',zorder=1)
+    points = [[i[0]/6.0,-0.25-5.5*idx+2.0*ssidx],
+              [i[0]/6.0+1.0/6,0.75-5.5*idx+2.0*ssidx],\
+              [i[0]/6.0+2.0/6,0.75-5.5*idx+2.0*ssidx],
+              [i[0]/6.0+1.0/6,-0.25-5.5*idx+2.0*ssidx]]
+    hlx = plt.Polygon(points,fc=clr,ec='k',zorder=1,linewidth=2)
     coords= hlx.get_xy()
     coord_set2.append(coords)
 
@@ -126,15 +141,19 @@ def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,z=1,bk
 
     if (l-2-1)%2 == 1:
 
-        points = [[i[1]/6.0-1.0/6,-0.75-5.5*idx+2.0*ssidx],[i[1]/6.0,-0.75-5.5*idx+2.0*ssidx],\
-                  [i[1]/6.0+1.0/6,0.25-5.5*idx+2.0*ssidx],[i[1]/6.0,0.25-5.5*idx+2.0*ssidx]]
+        points = [[i[1]/6.0-1.0/6,-0.75-5.5*idx+2.0*ssidx],\
+                  [i[1]/6.0,-0.75-5.5*idx+2.0*ssidx],\
+                  [i[1]/6.0+1.0/6,0.25-5.5*idx+2.0*ssidx],
+                  [i[1]/6.0,0.25-5.5*idx+2.0*ssidx]]
 
         coord_set2.append(points+[points[0]])
         hlx = mpatch.Polygon(points,fc=clr,zorder=0)
 
     else:
-        points = [[i[1]/6.0-1.0/6,0.75-5.5*idx+2.0*ssidx],[i[1]/6.0,0.75-5.5*idx+2.0*ssidx],\
-                  [i[1]/6.0+1.0/6,-0.25-5.5*idx+2.0*ssidx],[i[1]/6.0,-0.25-5.5*idx+2.0*ssidx]]
+        points = [[i[1]/6.0-1.0/6,0.75-5.5*idx+2.0*ssidx],
+                  [i[1]/6.0,0.75-5.5*idx+2.0*ssidx],\
+                  [i[1]/6.0+1.0/6,-0.25-5.5*idx+2.0*ssidx],
+                  [i[1]/6.0,-0.25-5.5*idx+2.0*ssidx]]
         coord_set1.append(points+[points[0]])
 
         hlx = plt.Polygon(points,fc=bkg,zorder=10)
@@ -251,8 +270,6 @@ def updateSS(ss,seq,alignment):
         else:
             ss_u += ss[j]
             j += 1
-            # if j == len(ss):  # check if reached the end of secondary structure annotation
-            #    return ss_u
 
     return ss_u
 
@@ -282,11 +299,11 @@ def SS_align(alignment,ID,seq,ss,i_start,i_end):
 
     a = pairwise2.align.localxs(seq,a_seq,-1,-0.5)
 
-    # check if the dssp annotation has any extra residues not in the fasta alignment
+    # check if the dssp annotation has any extra residues not in the alignment
     if a[0][1] != a_seq:
         print("extra residues in pdb found\n")
 
-    # check how many gap marks are at the end and beginning of the original alignment
+    # check how many gap marks are at the end and beginning of the alignment
     # (a_seq) and compare to the amount found in a[0][1]
     a_seq_gaps = [0,0]
     new_aln_gaps = [0,0]
@@ -321,23 +338,36 @@ def SS_align(alignment,ID,seq,ss,i_start,i_end):
 
     return SS_updated_new, a_new, extra_gaps, i_start, i_end
 
-def plot_coords(coords,z=10):
 
-    coords_f1, instructions1 = coords2path(coords)
+def plot_coords(coords_all,mat,sz,CMAP):
 
-    path = mpath.Path(np.array(coords_f1),np.array(instructions1))
-    patch = mpatch.PathPatch(path, facecolor='none',zorder=z)
-    plt.gca().add_patch(patch)
-    im = plt.imshow(mat,extent=[0.0,sz,0.5,3.0],cmap=CMAP,interpolation='none')
-    im.set_clip_path(patch)
+    for i,coords in enumerate(coords_all):
+
+        if not coords:
+            continue
+
+        coords_f1, instructions1 = coords2path(coords)
+
+        if i in [0,2]:
+            z = 0
+        else:
+            z = 10
+
+        path = mpath.Path(np.array(coords_f1),np.array(instructions1))
+        patch = mpatch.PathPatch(path, facecolor='none',zorder=z)
+        plt.gca().add_patch(patch)
+        im = plt.imshow(mat,extent=[0.0,sz,0.5,3.0],cmap=CMAP,interpolation='none')
+        im.set_clip_path(patch)
             
 def run_dssp(pdb_path, id, chain):  
 
     ss_seq = ""
     aa_seq = ""
-
-    p = PDBParser()
-    structure = p.get_structure(id, pdb_path)
+    #Suppress Biopython PDBParser warning
+    with warnings.catch_warnings(record=True) as w:  
+        warnings.simplefilter("always", PDBConstructionWarning)
+        p = PDBParser()
+        structure = p.get_structure(id, pdb_path)
     model = structure[0]
     dssp = DSSP(model, pdb_path)
     a_key = list(dssp.keys())
@@ -404,9 +434,11 @@ def score_column(msa_col, threshold=0):
     
     return conservation_count/len(msa_col)
 
-def parse_color(args,seq_wgaps,pdbseq,bfactors,msa):
+def parse_color(args,seq_wgaps,pdbseq,bfactors,msa,extra_gaps):
     CMAP = ""
-    if args.color in mcolors.BASE_COLORS.keys() or args.color in mcolors.CSS4_COLORS.keys() or args.color in mcolors.XKCD_COLORS.keys():
+    if args.color in mcolors.BASE_COLORS.keys() or \
+       args.color in mcolors.CSS4_COLORS.keys() or \
+       args.color in mcolors.XKCD_COLORS.keys():
         CMAP = ListedColormap([args.color])
     elif args.color[0] == "#":
         CMAP = ListedColormap([args.color])
@@ -429,7 +461,8 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa):
                         "C": 6}
         mview_colors_hit = [0,0,0,0,0,0,0]
 
-        mview_color_map = ["#33cc00","#009900","#cb0000","#0133ff","#0299fe","#6601cc","#ffff00","#808080"]
+        mview_color_map = ["#33cc00","#009900","#cb0000","#0133ff","#0299fe",
+                           "#6601cc","#ffff00","#808080"]
 
         for i in range(len(seq_wgaps)):
             try:
@@ -439,7 +472,8 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa):
             except:
                 bvals.append(7)
 
-        for i in range(len(mview_colors_hit)): # remove colors of residues not in sequence
+        # remove colors of residues not in sequence
+        for i in range(len(mview_colors_hit)): 
             if mview_colors_hit[i] == 0:
                 mview_color_map.pop(i)
                 for j in range(len(bvals)):
@@ -505,19 +539,23 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa):
 
 def read_pdb(id,args):
     pdbseq = ''
-    p = PDBParser()
-    bfactors = []
-    structure = p.get_structure(id, args.pdb)
-    model = structure[0]
-    for chain in model:
-        if chain.get_id() == args.chain_id:
-            
-            for residue in chain:
-                for atom in residue:
-                    if atom.name == "CA":
-                        bfactors.append(atom.bfactor)
-                        pdbseq += seq1(residue.get_resname())
-                        break
+    #Suppress Biopython PDBParser warning
+    with warnings.catch_warnings(record=True) as w: 
+        warnings.simplefilter("always", PDBConstructionWarning)
+        p = PDBParser()
+        bfactors = []
+        structure = p.get_structure(id, args.pdb)
+        model = structure[0]
+        for chain in model:
+            if chain.get_id() == args.chain_id:
+                for residue in chain:
+                    for atom in residue:
+                        if atom.name == "CA":
+                            bfactors.append(atom.bfactor)
+                            pdbseq += seq1(residue.get_resname())
+                            break
+    sys.stdout = sys.__stdout__
+
     return bfactors, pdbseq
 
 description='''
@@ -585,9 +623,10 @@ Example 5: Choose subregion of alignment to run SSDraw on
 
 Running on multiple pdbs:
 In order to rapidly generate multiple images with SSDraw, we recommend writing shell scripts comprised of commands like those shown in the above examples. For examples of such shell scripts, see one of the shell scripts in /figures/.
+
 '''
 
-if __name__ == '__main__':
+def get_args():
 
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -597,7 +636,7 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--pdb", help="(required) pdb file")
     parser.add_argument("-n", "--name", help="(required) id of the protein in the alignment file")
     parser.add_argument("-o", "--output", help="(required) name for output file")
-    parser.add_argument("--dssp", default=None, help="secondary structure annotation in DSSP format. If this option is not provided, SSDraw will compute secondary structure from the given PDB file with DSSP.")
+    parser.add_argument("--dssp", default=None, help="secondary structure annotation in DSSP or .horiz format. If this option is not provided, SSDraw will compute secondary structure from the given PDB file with DSSP.")
     parser.add_argument("--chain_id", default="A", help="chain id to use in pdb. Defaults to chain A.")
     parser.add_argument("--color_map", default=["inferno"], nargs="*", help="color map to use for heat map")
     parser.add_argument("--scoring_file",default=None,help="custom scoring file for alignment")
@@ -611,6 +650,11 @@ if __name__ == '__main__':
     parser.add_argument("--end", default=0,type=int)
 
     args = parser.parse_args()
+
+    return args
+
+def initialize():
+    args = get_args()
 
     if not args.fasta or not args.pdb or not args.output or not args.name:
         parser.print_help(sys.stderr)
@@ -646,8 +690,15 @@ if __name__ == '__main__':
     
     msa = [gap_sequence(a, [i_start, i_end]) for a in AlignIO.read(open(args.fasta), "fasta")]
 
+    return args,pdbseq,bfactors,msa,ss_wgaps,seq_wgaps,extra_gaps,i_start,i_end,strand,loop,helix,ss_break,ss_order,ss_bounds
+
+def SSDraw():
+
+    args,pdbseq,bfactors,msa,ss_wgaps,seq_wgaps,extra_gaps,i_start,i_end,strand,loop,helix,ss_break,ss_order,ss_bounds=initialize()
+    nlines = 1
+
     #Parse color and scoring args
-    CMAP, bvals = parse_color(args,seq_wgaps,pdbseq,bfactors,msa)
+    CMAP, bvals = parse_color(args,seq_wgaps,pdbseq,bfactors,msa,extra_gaps)
 
     mat = np.tile(NormalizeData(bvals), (100,1))
 
@@ -667,11 +718,9 @@ if __name__ == '__main__':
 
     if ss_order[-1] == 'H':
         sz = ss_bounds[-1][1]/6.0+1/6.0
-    elif ss_order[-1] == 'E':
+    elif ss_order[-1] in ['E','B']:
         sz = ss_bounds[-1][1]/6.0
     elif ss_order[-1] == 'L':
-        sz = (ss_bounds[-1][1])/6.0
-    elif ss_order[-1] == 'B':
         sz = (ss_bounds[-1][1])/6.0
 
     #Plot secondary structure chunks
@@ -691,18 +740,15 @@ if __name__ == '__main__':
             next_ss = ss_order[i+1]
 
         if ss_order[i] == 'L':
-            build_loop(ss_bounds[i],0,1,len(ss_wgaps),1,loop_coords,prev_ss,next_ss,z=0,clr=c,mat=mat,size=sz)
+            build_loop(ss_bounds[i],0,1,loop_coords,len(ss_wgaps),1,prev_ss,next_ss,z=0,clr=c,mat=mat,size=sz)
         elif ss_order[i] == 'H':
             build_helix(ss_bounds[i],0,1,helix_coords1,helix_coords2,z=i,clr=c,bkg=bc,imagemat=mat,size=sz)
         elif ss_order[i] == 'E':
             build_strand(ss_bounds[i],0,1,strand_coords,next_ss,z=i,clr=c,imagemat=mat,size=sz)
+    
 
-    if len(strand_coords) != 0:
-        plot_coords(strand_coords)
-    if len(helix_coords1) != 0 and len(helix_coords2) != 0:
-        plot_coords(helix_coords1,z=0)
-        plot_coords(helix_coords2)
-
+    plot_coords([loop_coords,strand_coords,helix_coords1,helix_coords2],mat,sz,CMAP)
+    
     plt.ylim([0.5,3])
 
     plt.axis('off')
@@ -710,3 +756,7 @@ if __name__ == '__main__':
         
     print("Saving output to {:}.{:}...".format(args.output, args.output_file_type))
     plt.savefig(args.output+'.'+args.output_file_type,bbox_inches='tight',dpi=args.dpi,transparent=True)
+    
+if __name__ == '__main__':
+
+    SSDraw()
