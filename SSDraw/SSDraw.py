@@ -6,6 +6,9 @@ from matplotlib.collections import PatchCollection
 import matplotlib.path as mpath
 import matplotlib
 import numpy as np
+import warnings
+from Bio import BiopythonDeprecationWarning
+warnings.simplefilter('ignore',BiopythonDeprecationWarning)
 from Bio import pairwise2
 import sys, os, string, math, re
 from matplotlib import rcParams
@@ -348,6 +351,7 @@ def plot_coords(coords_all,mat,sz,CMAP):
 
         coords_f1, instructions1 = coords2path(coords)
 
+        #If loop or bottom helix layer, zorder = 0
         if i in [0,2]:
             z = 0
         else:
