@@ -118,12 +118,13 @@ def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,
     i = helix
     l = i[1]-i[0]+1
     points = [[i[0]/6.0,-0.25-5.5*idx+2.0*ssidx],
-              [i[0]/6.0+1.0/6,0.75-5.5*idx+2.0*ssidx],\
+              [i[0]/6.0+1.0/6,0.75-5.5*idx+2.0*ssidx],
               [i[0]/6.0+2.0/6,0.75-5.5*idx+2.0*ssidx],
               [i[0]/6.0+1.0/6,-0.25-5.5*idx+2.0*ssidx]]
-    hlx = plt.Polygon(points,fc=clr,ec='k',zorder=1,linewidth=2)
-    coords= hlx.get_xy()
-    coord_set2.append(coords)
+    #hlx = plt.Polygon(points,fc=clr,ec='k',zorder=1,linewidth=2)
+    #coords= hlx.get_xy()
+    #coord_set2.append(coords)
+    coord_set2.append(points+[points[0]])
 
     for j in range((l-2)-1):
         if j % 2 == 0:
@@ -132,7 +133,7 @@ def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,
                       [i[0]/6.0+(3.0+j)/6,-0.75-5.5*idx+2.0*ssidx],
                       [i[0]/6.0+(2.0+j)/6,-0.75-5.5*idx+2.0*ssidx]]
             coord_set1.append(points+[points[0]])
-            hlx = mpatch.Polygon(points,fc=bkg,zorder=0)
+            #hlx = mpatch.Polygon(points,fc=bkg,zorder=z)
 
         else:
             points = [[i[0]/6.0+(1.0+j)/6,-0.75-5.5*idx+2.0*ssidx],
@@ -140,7 +141,7 @@ def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,
                       [i[0]/6.0+(3.0+j)/6,0.75-5.5*idx+2.0*ssidx],
                       [i[0]/6.0+(2.0+j)/6,0.75-5.5*idx+2.0*ssidx]]
             coord_set2.append(points+[points[0]])
-            hlx = mpatch.Polygon(points,fc=clr,zorder=z)
+            #hlx = mpatch.Polygon(points,fc=clr,zorder=0)
 
 
     if (l-2-1)%2 == 1:
@@ -151,7 +152,7 @@ def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,
                   [i[1]/6.0,0.25-5.5*idx+2.0*ssidx]]
 
         coord_set2.append(points+[points[0]])
-        hlx = mpatch.Polygon(points,fc=clr,zorder=0)
+        #hlx = mpatch.Polygon(points,fc=clr,zorder=0)
 
     else:
         points = [[i[1]/6.0-1.0/6,0.75-5.5*idx+2.0*ssidx],
@@ -160,7 +161,7 @@ def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,
                   [i[1]/6.0,-0.25-5.5*idx+2.0*ssidx]]
         coord_set1.append(points+[points[0]])
 
-        hlx = plt.Polygon(points,fc=bkg,zorder=10)
+        #hlx = plt.Polygon(points,fc=bkg,zorder=10)
 
 def SS_breakdown(ss):
     
@@ -353,7 +354,7 @@ def plot_coords(coords_all,mat,sz,CMAP):
         coords_f1, instructions1 = coords2path(coords)
 
         #If loop or bottom helix layer, zorder = 0
-        if i in [0,2]:
+        if i in [0,1]:
             z = 0
         else:
             z = 10
@@ -361,8 +362,9 @@ def plot_coords(coords_all,mat,sz,CMAP):
         path = mpath.Path(np.array(coords_f1),np.array(instructions1))
         patch = mpatch.PathPatch(path, facecolor='none',zorder=z)
         plt.gca().add_patch(patch)
-        im = plt.imshow(mat,extent=[0.0,sz,0.5,3.0],cmap=CMAP,interpolation='none')
+        im = plt.imshow(mat,extent=[0.0,sz,0.5,3.0],cmap=CMAP,interpolation='none',zorder=z)
         im.set_clip_path(patch)
+        
             
 def run_dssp(pdb_path, id, chain):  
 
@@ -752,7 +754,7 @@ def SSDraw():
             build_strand(ss_bounds[i],0,1,strand_coords,next_ss,z=i,clr=c,imagemat=mat,size=sz)
     
 
-    plot_coords([loop_coords,strand_coords,helix_coords1,helix_coords2],mat,sz,CMAP)
+    plot_coords([loop_coords,helix_coords2,strand_coords,helix_coords1],mat,sz,CMAP)
     
     plt.ylim([0.5,3])
 
