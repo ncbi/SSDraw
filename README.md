@@ -41,8 +41,11 @@ SSDraw uses a gradient to color each position in the alignment by a certain scor
 
 ### Scoring: 
 -conservation_score: score each position in the alignment by conservation score.
+
 -bfactor: score each residue in the pdb by B-factor.
+
 -scoring_file: score each residue by a custom scoring file prepared by the user.
+
 -mview: color each residue by the mview coloring system.
 
 #### Example 2: score by conservation
