@@ -84,9 +84,6 @@ Normally, SSDraw will generate a DSSP annotation from the PDB file, but if you h
 ### Choosing a subregion:
 If you want SSDraw to draw only a portion of your alignment, you can specify the start and/or end points using the --start and --end options respectively. The argument for these options correspond to the index of the alignment position, not to the residue position numbers. See [example 2](#example-2-score-by-conservation).
 
-### Running on multiple pdbs:
-In order to rapidly generate multiple images with SSDraw, we recommend writing shell scripts comprised of commands like those shown in the above examples. For examples of such a shell script, see [here](SSDraw/figures/ubiquitin/run_ssdraw.sh).
-
 ### Helper Scripts
 We now provide two helper scripts to assist the user in stacking multiple diagrams.
 ```
