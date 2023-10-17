@@ -263,7 +263,7 @@ def SS_breakdown(ss):
     return strand,loop,helix, ssbreak, ss_order, ss_bounds
 
 
-def updateSS(ss,seq,alignment):
+def updateSS(ss,seq,alignment,ref_align):
 
     ss_u = ''
 
@@ -271,7 +271,10 @@ def updateSS(ss,seq,alignment):
 
     for i in range(len(alignment)):
         if alignment[i] == '-':
-            ss_u += '-'
+            if ref_align[i] == '-':
+                ss_u += '-'
+            else:
+                ss_u += 'C'
         else:
             ss_u += ss[j]
             j += 1
@@ -336,7 +339,7 @@ def SS_align(alignment,ID,seq,ss,i_start,i_end):
 
     extra_gaps = [new_aln_gaps[0]-a_seq_gaps[0], new_aln_gaps[1]-a_seq_gaps[1]]
 
-    SS_updated = updateSS(ss,seq,a[0][0])
+    SS_updated = updateSS(ss,seq,a[0][0],a[0][1])
 
     SS_updated_new = gap_sequence(SS_updated, extra_gaps)
     a_new = gap_sequence(a[0][1], extra_gaps)
@@ -366,8 +369,9 @@ def plot_coords(coords_all,mat,sz,CMAP):
         im.set_clip_path(patch)
         
             
-def run_dssp(pdb_path, id, chain):  
+def run_dssp(pdb_path, id, chain_id, dssp_exe='mkdssp'): 
 
+    dssp_mode = "dssp"
     ss_seq = ""
     aa_seq = ""
     #Suppress Biopython PDBParser warning
@@ -376,18 +380,45 @@ def run_dssp(pdb_path, id, chain):
         p = PDBParser()
         structure = p.get_structure(id, pdb_path)
     model = structure[0]
-    dssp = DSSP(model, pdb_path)
-    a_key = list(dssp.keys())
-    for key in a_key:
-        if key[0] == chain:
-            aa_seq+=dssp[key][1] 
-            if dssp[key][2] == "-":
-                ss_seq+="C"
-            else:      
-                ss_seq+=dssp[key][2]
+
+    try:
+        dssp = DSSP(model, pdb_path, dssp=dssp_exe)
+    except:
+        # use pydssp instead of dssp
+        dssp_mode = "pydssp"
+        import torch
+        import pydssp
+        atom_indices = ['N', 'CA', 'C', 'O']
+        #res_len = len([])
+        
+        for chain in model:
+            if chain.get_id() == chain_id:
+                resnum = len([i for i in chain.get_residues()])
+                coords = torch.zeros(resnum, 4, 3)
+                r_idx = 0
+                for residue in chain:
+                    for atom in residue:
+                        if atom.name in atom_indices:
+                            coords[r_idx][atom_indices.index(atom.name)] = torch.from_numpy(atom.coord) 
+                    aa_seq += seq1(residue.get_resname())
+                    r_idx+=1
+        
+        ss_seq = "".join(pydssp.assign(coords, out_type='c3'))
+        ss_seq = ss_seq.replace("-", "C")
+
+
+    if dssp_mode == "dssp":
+        a_key = list(dssp.keys())
+        for key in a_key:
+            if key[0] == chain_id:
+                aa_seq+=dssp[key][1] 
+                if dssp[key][2] == "-":
+                    ss_seq+="C"
+                else:      
+                    ss_seq+=dssp[key][2]
       
     return [ss_seq,aa_seq]
-
+    
 def convert2horiz(dssp_file, pdbseq):
 
     ss_seq = ""
@@ -495,9 +526,18 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa,extra_gaps):
         scoring_seq = ""
         with open(args.scoring_file, "r") as g:
             lines = g.readlines()
-        for line in lines:
-            scoring_seq += line.split()[0]
-            bvals_tmp.append(float(line.split()[1]))
+
+        if lines[0] == '\t Amino Acid Conservation Scores\n': # read in consurf file
+            for line in lines:
+                if len(line.split()) > 0:
+                    if line.split()[0].isdigit():
+                        scoring_seq += line.split()[1]
+                        bvals_tmp.append(float(line.split()[4]))
+
+        else: # read in custom scoring file
+            for line in lines:
+                scoring_seq += line.split()[0]
+                bvals_tmp.append(float(line.split()[1]))
 
         score_align = pairwise2.align.localxs(pdbseq,scoring_seq,-1,-0.5)
 
@@ -535,7 +575,10 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa,extra_gaps):
             sys.exit()
         for i in range(len(seq_wgaps)):
             if seq_wgaps[i] == "-" or bvals_align[0][1][i] == "-":
-                bvalsf.append(min(bvals))
+                if j >= len(bvals):
+                    bvalsf.append(bvals[j-1])
+                else:
+                    bvalsf.append(bvals[j])
             elif seq_wgaps[i] == bvals_align[0][1][i]:
                 bvalsf.append(bvals[j])
                 j+=1
@@ -626,10 +669,10 @@ If you want SSDraw to draw only a portion of your alignment, you can specify the
 
 Example 5: Choose subregion of alignment to run SSDraw on
     python3 ../SSDraw.py --fasta aligned.fasta --name 1ndd --pdb 1ndd.pdb --output 1ndd_conservation_cropped -conservation_score --start 80 --end 132
-----------------
 
 Running on multiple pdbs:
 In order to rapidly generate multiple images with SSDraw, we recommend writing shell scripts comprised of commands like those shown in the above examples. For examples of such shell scripts, see one of the shell scripts in /figures/.
+----------------
 
 '''
 
@@ -643,25 +686,27 @@ def get_args():
     parser.add_argument("-p", "--pdb", help="(required) pdb file")
     parser.add_argument("-n", "--name", help="(required) id of the protein in the alignment file")
     parser.add_argument("-o", "--output", help="(required) name for output file")
-    parser.add_argument("--dssp", default=None, help="secondary structure annotation in DSSP or .horiz format. If this option is not provided, SSDraw will compute secondary structure from the given PDB file with DSSP.")
+    parser.add_argument("--SS", default=None, help="secondary structure annotation in DSSP or .horiz format. If this option is not provided, SSDraw will compute secondary structure from the given PDB file with DSSP.")
     parser.add_argument("--chain_id", default="A", help="chain id to use in pdb. Defaults to chain A.")
     parser.add_argument("--color_map", default=["inferno"], nargs="*", help="color map to use for heat map")
     parser.add_argument("--scoring_file",default=None,help="custom scoring file for alignment")
     parser.add_argument("--color", default="white", help="color for the image. Can be a color name (eg. white, black, green), or a hex code")
     parser.add_argument("-conservation_score", action='store_true', help="score alignment by conservation score")
-    parser.add_argument("--output_file_type", default="png")
+    parser.add_argument("--output_file_type", default="png", help="output file type. Options: png, ps, eps, tif, svg")
     parser.add_argument("-bfactor", action='store_true', help="score by B-factor")
     parser.add_argument("-mview", action="store_true", help="color by mview color map")
     parser.add_argument("--dpi", default=600, type=int, help="dpi to use for final plot")
+    parser.add_argument("--ticks", default=0, type=int, help="set ticks at every nth position")
     parser.add_argument("--start", default=0, type=int)
     parser.add_argument("--end", default=0,type=int)
+    parser.add_argument("--dssp_exe", default='mkdssp', help='The path to your dssp executable. Default: mkdssp')
 
     args = parser.parse_args()
 
-    return args
+    return args, parser
 
 def initialize():
-    args = get_args()
+    args, parser = get_args()
 
     if not args.fasta or not args.pdb or not args.output or not args.name:
         parser.print_help(sys.stderr)
@@ -675,12 +720,12 @@ def initialize():
     # read in amino acid sequence from PDB
     bfactors, pdbseq = read_pdb(id,args)
 
-    if args.dssp:
+    if args.SS:
         # get secondary structure from pre-existing DSSP annotation
-        f = convert2horiz(args.dssp,pdbseq)
+        f = convert2horiz(args.SS,pdbseq)
     else:
         # run the dssp executable
-        f = run_dssp(args.pdb, id, chain_id) 
+        f = run_dssp(args.pdb, id, chain_id, dssp_exe=args.dssp_exe) 
 
     nlines = 1
     salign = open(args.fasta).read().splitlines() 
@@ -758,12 +803,35 @@ def SSDraw():
     
     plt.ylim([0.5,3])
 
-    plt.axis('off')
+    # remove spines and yticks
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.get_yaxis().set_ticks([])
+
+    if args.ticks == 0:
+        ax.get_xaxis().set_ticks([])
+    else:
+        res_x = 0.1646
+        ticks = []
+        labels = []
+        i = 0
+        label_i = 1
+        while label_i <= len(bvals):
+            ticks.append(i)
+            labels.append(str(label_i))
+            i+=res_x*args.ticks
+            label_i+=args.ticks
+        ax.get_xaxis().set_ticks(ticks,labels=labels)
+        ax.xaxis.set_ticks_position('top')
+
+
     ax.set_aspect(0.5)
-        
+
     print("Saving output to {:}.{:}...".format(args.output, args.output_file_type))
-    plt.savefig(args.output+'.'+args.output_file_type,bbox_inches='tight',dpi=args.dpi,transparent=True)
-    
+    plt.savefig(args.output+'.'+args.output_file_type,bbox_inches='tight',dpi=args.dpi,transparent=True)   
+
 if __name__ == '__main__':
 
     SSDraw()
