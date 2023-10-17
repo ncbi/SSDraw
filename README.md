@@ -2,7 +2,7 @@
 # SSDraw
 SSDraw is a program that generates publication-quality protein secondary structure diagrams from three-dimensional protein structures. To depict relationships between secondary structure and other protein features, diagrams can be colored by conservation score, B-factor, or custom scoring.
 
-SSDraw also has a colab notebook available at https://colab.research.google.com/github/ethanchen1301/SSDraw/blob/main/SSDraw.ipynb
+SSDraw also has a colab notebook available at https://colab.research.google.com/github/ethanchen1301/SSDraw/blob/main/SSDraw.ipynb (only usable for Chrome)
 ## Installation
 
 SSDraw requires the Biopython and matplotlib modules to be installed.
@@ -21,6 +21,16 @@ conda install -c salilab dssp
 
 Alternatively, you can install DSSP either through apt-get (sudo apt-get install dssp), or you can follow the instructions on their github page to make a local installation: 
 https://github.com/cmbi/dssp.
+
+If DSSP fails to install, there is a PyTorch implementation of DSSP that you can install as a workaround:
+
+#### Alternative to installing DSSP
+
+```
+pip install torch
+pip install pydssp
+pip install nomkl
+```
 
 ## Instructions
 SSDraw requires 4 arguments:
@@ -76,3 +86,17 @@ If you want SSDraw to draw only a portion of your alignment, you can specify the
 
 ### Running on multiple pdbs:
 In order to rapidly generate multiple images with SSDraw, we recommend writing shell scripts comprised of commands like those shown in the above examples. For examples of such a shell script, see [here](SSDraw/figures/ubiquitin/run_ssdraw.sh).
+
+### Helper Scripts
+We now provide two helper scripts to assist the user in stacking multiple diagrams.
+```
+python3 run_multiple_pdbs_on_one_msa.py --input [input script] --output [output directory]
+```
+run_multiple_pdbs_on_one_msa.py will run SSDraw for multiple pdbs from a single multiple sequence alignment, saving the diagrams to a specified output directory. Finally, the script will create a composite stacked image of the diagrams. An example input script is shown in SSDraw/example_run.txt.
+
+```
+python3 combine_images.py [list of images]
+```
+This script creates a composite stacked image in png format of a list of SSDraw diagrams. To use this script, you will already have had to run SSDraw to generate individual diagrams. 
+
+
