@@ -92,7 +92,7 @@ python3 ../SSDraw.py --fasta 2n1v.fasta --name 2n1v --pdb 2n1v.pdb --output 2n1v
 ![ConSurf](imgs/2n1v_consurf.png)
 The code can read in either the ConSurf grades file or a Rate4Site file with raw scores. The raw scores will be converted into grades according to the algorithm used by ConSurf: https://github.com/Rostlab/ConSurf
 
-### Helper Scripts
+### Stacking diagrams
 We now provide a helper script to assist the user in stacking multiple diagrams.
 ```
 python3 run_multiple_pdbs_on_one_msa.py --input [input script] --output [output directory]
