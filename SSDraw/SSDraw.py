@@ -24,6 +24,60 @@ import warnings, textwrap
 from Bio import BiopythonWarning
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
 
+SPACING = 2.3
+
+def read_r4s(inputfile):
+    # algorithm to convert raw scores to grades is taken from consurf:
+    # https://github.com/Rostlab/ConSurf
+    seq = ""
+    scores = []
+
+    pattern = r"^\s*?\d+\s+(\w)\s+(\S+)\s+\[\s*\S+,\s*\S+\]\s+\S+\s+\d+\/\d+"
+    with open(inputfile) as READ:
+        for line in READ:
+            line = line.strip()
+            if re.match(pattern, line):
+                match = re.match(pattern, line)
+                seq+=match.group(1)
+                scores.append(eval(match.group(2)))
+
+    max_cons = min(scores)
+
+    # 9 steps from -|max_cons| to |max_cons|, midpoint is 0
+    ConsGradeUnity = max_cons / 4.5 * -1
+    if max_cons >= 0:
+        ConsGradeUnity = max_cons
+
+    grades = []
+    for score in scores:
+        grades.append(max(1, 9-int((score-max_cons)/ConsGradeUnity)))
+
+    return seq, grades
+
+def read_consurf_grad(inputfile):
+
+    grades = []
+    seq = ""
+    pattern = r"^\s*?\d+\s+(\w)\s+\S+\s+\S+\s+(\d)\S*\s+-?\d+.\d+,\s+-?\d+.\d+\s+\d,\d\s+\d+\/\d+\s+\S+"
+    with open(inputfile, "r") as f:
+        for line in f:
+            if re.match(pattern, line):
+                match = re.match(pattern,line)
+                seq += match.group(1)
+                grades.append(match.group(2))
+            
+    return seq,grades
+
+def check_consurf_file(file):
+    consurf_pattern = r"^\s*?\d+\s+(\w)\s+\S+\s+\S+\s+(\d)\S*\s+-?\d+.\d+,\s+-?\d+.\d+\s+\d,\d\s+\d+\/\d+\s+\S+"
+    r4s_pattern = r"^\s*?\d+\s+(\w)\s+(\S+)\s+\[\s*\S+,\s*\S+\]\s+\S+\s+\d+\/\d+"
+    with open(file, "r") as f:
+        for line in f:
+            if re.match(consurf_pattern, line):
+                return "consurf"
+            if re.match(r4s_pattern, line):
+                return "r4s"
+
 def gap_sequence(seq, extra_gaps):
     # seq can be a list or a string, anything that can be indexed
     # extra gaps is a list of length two [x,y],
@@ -56,7 +110,10 @@ def coords2path(coord_set1):
     return coords_f1, instructions1
 
 def build_loop(loop,idx,ssidx,loop_coords,linelen,nlines,prev_ss,next_ss,
-               z=1,clr='r',mat=0,size=75): 
+               z=1,clr='r',mat=0,size=75):
+
+    #print(loop)
+    #sys.exit()
     
     # if loop is smaller than 3 residues and has gaps on both sides, don't draw 
     if prev_ss == "B" and next_ss == "B" and loop[1]-loop[0] < 2:
@@ -81,11 +138,11 @@ def build_loop(loop,idx,ssidx,loop_coords,linelen,nlines,prev_ss,next_ss,
     if next_ss == None:
         o=-4.1
 
-    rectangle = mpatch.Rectangle((i0/6.0,-0.25-5.5*idx+2.0*ssidx),
+    rectangle = mpatch.Rectangle((i0/6.0,-0.25-5.5*idx-SPACING*ssidx),
                                  (i1-i0+o)/6.0,0.5,
                                   fc=clr,ec='k',zorder=0)
 
-    plt.gca().add_patch(rectangle)
+    #plt.gca().add_patch(rectangle)
 
     xy = rectangle.get_xy()
     w = rectangle.get_width()
@@ -101,13 +158,13 @@ def build_strand(strand,idx,ssidx,strand_coords,next_ss,z=1,clr='r',
 
     delta = 0 if next_ss == None else 1
 
-    arrow=mpatch.FancyArrow(((strand[0]+delta-1)/6.0),-5.5*idx+2.0*ssidx,
+    arrow=mpatch.FancyArrow(((strand[0]+delta-1)/6.0),-5.5*idx-SPACING*ssidx,
                             (strand[1]-strand[0]+1)/6.0,0,
                             width=1.0,fc=clr,linewidth=0.5,ec='k',
                             zorder=z,head_width=2.0,
                             length_includes_head=True,head_length=2.0/6.0)
                                 
-    plt.gca().add_patch(arrow)
+    #plt.gca().add_patch(arrow)
 
     strand_coords.append(arrow.get_xy())
 
@@ -117,10 +174,10 @@ def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,
 
     i = helix
     l = i[1]-i[0]+1
-    points = [[i[0]/6.0,-0.25-5.5*idx+2.0*ssidx],
-              [i[0]/6.0+1.0/6,0.75-5.5*idx+2.0*ssidx],
-              [i[0]/6.0+2.0/6,0.75-5.5*idx+2.0*ssidx],
-              [i[0]/6.0+1.0/6,-0.25-5.5*idx+2.0*ssidx]]
+    points = [[i[0]/6.0,-0.25-5.5*idx-SPACING*ssidx],
+              [i[0]/6.0+1.0/6,0.75-5.5*idx-SPACING*ssidx],
+              [i[0]/6.0+2.0/6,0.75-5.5*idx-SPACING*ssidx],
+              [i[0]/6.0+1.0/6,-0.25-5.5*idx-SPACING*ssidx]]
     #hlx = plt.Polygon(points,fc=clr,ec='k',zorder=1,linewidth=2)
     #coords= hlx.get_xy()
     #coord_set2.append(coords)
@@ -128,37 +185,37 @@ def build_helix(helix,idx,ssidx,coord_set1, coord_set2, clr='r',size=37.5,
 
     for j in range((l-2)-1):
         if j % 2 == 0:
-            points = [[i[0]/6.0+(1.0+j)/6,0.75-5.5*idx+2.0*ssidx],
-                      [i[0]/6.0+(2.0+j)/6,0.75-5.5*idx+2.0*ssidx],
-                      [i[0]/6.0+(3.0+j)/6,-0.75-5.5*idx+2.0*ssidx],
-                      [i[0]/6.0+(2.0+j)/6,-0.75-5.5*idx+2.0*ssidx]]
+            points = [[i[0]/6.0+(1.0+j)/6,0.75-5.5*idx-SPACING*ssidx],
+                      [i[0]/6.0+(2.0+j)/6,0.75-5.5*idx-SPACING*ssidx],
+                      [i[0]/6.0+(3.0+j)/6,-0.75-5.5*idx-SPACING*ssidx],
+                      [i[0]/6.0+(2.0+j)/6,-0.75-5.5*idx-SPACING*ssidx]]
             coord_set1.append(points+[points[0]])
             #hlx = mpatch.Polygon(points,fc=bkg,zorder=z)
 
         else:
-            points = [[i[0]/6.0+(1.0+j)/6,-0.75-5.5*idx+2.0*ssidx],
-                      [i[0]/6.0+(2.0+j)/6,-0.75-5.5*idx+2.0*ssidx],
-                      [i[0]/6.0+(3.0+j)/6,0.75-5.5*idx+2.0*ssidx],
-                      [i[0]/6.0+(2.0+j)/6,0.75-5.5*idx+2.0*ssidx]]
+            points = [[i[0]/6.0+(1.0+j)/6,-0.75-5.5*idx-SPACING*ssidx],
+                      [i[0]/6.0+(2.0+j)/6,-0.75-5.5*idx-SPACING*ssidx],
+                      [i[0]/6.0+(3.0+j)/6,0.75-5.5*idx-SPACING*ssidx],
+                      [i[0]/6.0+(2.0+j)/6,0.75-5.5*idx-SPACING*ssidx]]
             coord_set2.append(points+[points[0]])
             #hlx = mpatch.Polygon(points,fc=clr,zorder=0)
 
 
     if (l-2-1)%2 == 1:
 
-        points = [[i[1]/6.0-1.0/6,-0.75-5.5*idx+2.0*ssidx],\
-                  [i[1]/6.0,-0.75-5.5*idx+2.0*ssidx],\
-                  [i[1]/6.0+1.0/6,0.25-5.5*idx+2.0*ssidx],
-                  [i[1]/6.0,0.25-5.5*idx+2.0*ssidx]]
+        points = [[i[1]/6.0-1.0/6,-0.75-5.5*idx-SPACING*ssidx],\
+                  [i[1]/6.0,-0.75-5.5*idx-SPACING*ssidx],\
+                  [i[1]/6.0+1.0/6,0.25-5.5*idx-SPACING*ssidx],
+                  [i[1]/6.0,0.25-5.5*idx-SPACING*ssidx]]
 
         coord_set2.append(points+[points[0]])
         #hlx = mpatch.Polygon(points,fc=clr,zorder=0)
 
     else:
-        points = [[i[1]/6.0-1.0/6,0.75-5.5*idx+2.0*ssidx],
-                  [i[1]/6.0,0.75-5.5*idx+2.0*ssidx],\
-                  [i[1]/6.0+1.0/6,-0.25-5.5*idx+2.0*ssidx],
-                  [i[1]/6.0,-0.25-5.5*idx+2.0*ssidx]]
+        points = [[i[1]/6.0-1.0/6,0.75-5.5*idx-SPACING*ssidx],
+                  [i[1]/6.0,0.75-5.5*idx-SPACING*ssidx],\
+                  [i[1]/6.0+1.0/6,-0.25-5.5*idx-SPACING*ssidx],
+                  [i[1]/6.0,-0.25-5.5*idx-SPACING*ssidx]]
         coord_set1.append(points+[points[0]])
 
         #hlx = plt.Polygon(points,fc=bkg,zorder=10)
@@ -347,7 +404,7 @@ def SS_align(alignment,ID,seq,ss,i_start,i_end):
     return SS_updated_new, a_new, extra_gaps, i_start, i_end
 
 
-def plot_coords(coords_all,mat,sz,CMAP):
+def plot_coords(coords_all,mat,sz,CMAP,plot=None,ysz=0.5):
 
     for i,coords in enumerate(coords_all):
 
@@ -361,11 +418,13 @@ def plot_coords(coords_all,mat,sz,CMAP):
             z = 0
         else:
             z = 10
-
         path = mpath.Path(np.array(coords_f1),np.array(instructions1))
-        patch = mpatch.PathPatch(path, facecolor='none',zorder=z)
-        plt.gca().add_patch(patch)
-        im = plt.imshow(mat,extent=[0.0,sz,0.5,3.0],cmap=CMAP,interpolation='none',zorder=z)
+        patch = mpatch.PathPatch(path, facecolor='none',ec='k',zorder=z)
+        if plot != None:
+            plot.add_patch(patch)
+        else:
+            plt.gca().add_patch(patch)
+        im = plt.imshow(mat,extent=[0.0,sz,ysz,3],cmap=CMAP,interpolation='none',zorder=z)
         im.set_clip_path(patch)
         
             
@@ -520,6 +579,44 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa,extra_gaps):
 
         CMAP = ListedColormap(mview_color_map)
 
+    elif args.consurf:
+        # read in a rate4site output file or consurf score file
+        # if rate4site output file, convert raw scores to 1-9 scores
+        consurf_color_map = ["#10C8D1", "#8CFFFF", "#D7FFFF", "#EAFFFF", "#FFFFFF",
+                             "#FCEDF4", "#FAC9DE", "#F07DAB", "#A02560"]
+        
+        scoring_seq = ""
+        bvals_tmp = []
+        consurf_mode = check_consurf_file(args.consurf)
+        if consurf_mode == "consurf":
+            scoring_seq,bvals_tmp = read_consurf_grad(args.consurf)
+        elif consurf_mode == "r4s":
+            scoring_seq,bvals_tmp = read_r4s(args.consurf)
+
+        #print(bvals_tmp)
+
+        # remove colors of residues not in sequence
+        for i in reversed(range(1,10)): 
+            if i not in bvals_tmp:
+                consurf_color_map.pop(i-1)
+                for j in range(len(bvals_tmp)):
+                    if bvals_tmp[j] > i:
+                        bvals_tmp[j] -= 1
+        #print(consurf_color_map)
+
+        CMAP = ListedColormap(consurf_color_map)
+
+        score_align = pairwise2.align.localxs(pdbseq,scoring_seq,-1,-0.5)
+
+        j = 0
+        for i in range(len(score_align[0][1])):
+            if score_align[0][0][i] != "-":
+                if score_align[0][1][i] != "-":
+                    bvals.append(bvals_tmp[j])
+                    j+=1
+                else:
+                    bvals.append(min(bvals_tmp))
+
     elif args.scoring_file: # use custom scoring by residue
         # read in scoring file
         bvals_tmp = []
@@ -527,17 +624,21 @@ def parse_color(args,seq_wgaps,pdbseq,bfactors,msa,extra_gaps):
         with open(args.scoring_file, "r") as g:
             lines = g.readlines()
 
-        if lines[0] == '\t Amino Acid Conservation Scores\n': # read in consurf file
-            for line in lines:
-                if len(line.split()) > 0:
-                    if line.split()[0].isdigit():
-                        scoring_seq += line.split()[1]
-                        bvals_tmp.append(float(line.split()[4]))
+        for line in lines:
+            scoring_seq += line.split()[0]
+            bvals_tmp.append(float(line.split()[1]))
 
-        else: # read in custom scoring file
-            for line in lines:
-                scoring_seq += line.split()[0]
-                bvals_tmp.append(float(line.split()[1]))
+        #if lines[0] == '\t Amino Acid Conservation Scores\n': # read in consurf file
+        #    for line in lines:
+        #        if len(line.split()) > 0:
+        #            if line.split()[0].isdigit():
+        #                scoring_seq += line.split()[1]
+        #                bvals_tmp.append(float(line.split()[4]))
+
+        #else: # read in custom scoring file
+        #    for line in lines:
+        #        scoring_seq += line.split()[0]
+        #        bvals_tmp.append(float(line.split()[1]))
 
         score_align = pairwise2.align.localxs(pdbseq,scoring_seq,-1,-0.5)
 
@@ -676,7 +777,7 @@ In order to rapidly generate multiple images with SSDraw, we recommend writing s
 
 '''
 
-def get_args():
+def get_args(args=sys.argv[1:]):
 
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -700,13 +801,16 @@ def get_args():
     parser.add_argument("--start", default=0, type=int)
     parser.add_argument("--end", default=0,type=int)
     parser.add_argument("--dssp_exe", default='mkdssp', help='The path to your dssp executable. Default: mkdssp')
-
-    args = parser.parse_args()
+    parser.add_argument("--consurf", default="", help="consurf or rate4site file to color image with. If rate4site file is given, SSDraw will convert raw scores to grades.")
+    
+    args = parser.parse_args(args)
 
     return args, parser
 
-def initialize():
-    args, parser = get_args()
+def initialize(args=None,parser=None):
+    
+    if args==None:
+        args, parser = get_args()
 
     if not args.fasta or not args.pdb or not args.output or not args.name:
         parser.print_help(sys.stderr)
@@ -743,8 +847,9 @@ def initialize():
     msa = [gap_sequence(a, [i_start, i_end]) for a in AlignIO.read(open(args.fasta), "fasta")]
 
     return args,pdbseq,bfactors,msa,ss_wgaps,seq_wgaps,extra_gaps,i_start,i_end,strand,loop,helix,ss_break,ss_order,ss_bounds
+    
 
-def SSDraw():
+def SSDraw(args=None,parser=None):
 
     args,pdbseq,bfactors,msa,ss_wgaps,seq_wgaps,extra_gaps,i_start,i_end,strand,loop,helix,ss_break,ss_order,ss_bounds=initialize()
     nlines = 1
@@ -792,11 +897,11 @@ def SSDraw():
             next_ss = ss_order[i+1]
 
         if ss_order[i] == 'L':
-            build_loop(ss_bounds[i],0,1,loop_coords,len(ss_wgaps),1,prev_ss,next_ss,z=0,clr=c,mat=mat,size=sz)
+            build_loop(ss_bounds[i],0,-(2.0/SPACING),loop_coords,len(ss_wgaps),1,prev_ss,next_ss,z=0,clr=c,mat=mat,size=sz)
         elif ss_order[i] == 'H':
-            build_helix(ss_bounds[i],0,1,helix_coords1,helix_coords2,z=i,clr=c,bkg=bc,imagemat=mat,size=sz)
+            build_helix(ss_bounds[i],0,-(2.0/SPACING),helix_coords1,helix_coords2,z=i,clr=c,bkg=bc,imagemat=mat,size=sz)
         elif ss_order[i] == 'E':
-            build_strand(ss_bounds[i],0,1,strand_coords,next_ss,z=i,clr=c,imagemat=mat,size=sz)
+            build_strand(ss_bounds[i],0,-(2.0/SPACING),strand_coords,next_ss,z=i,clr=c,imagemat=mat,size=sz)
     
 
     plot_coords([loop_coords,helix_coords2,strand_coords,helix_coords1],mat,sz,CMAP)
@@ -830,7 +935,7 @@ def SSDraw():
     ax.set_aspect(0.5)
 
     print("Saving output to {:}.{:}...".format(args.output, args.output_file_type))
-    plt.savefig(args.output+'.'+args.output_file_type,bbox_inches='tight',dpi=args.dpi,transparent=True)   
+    plt.savefig(args.output+'.'+args.output_file_type,bbox_inches='tight',dpi=args.dpi,transparent=True)
 
 if __name__ == '__main__':
 
