@@ -84,16 +84,17 @@ Normally, SSDraw will generate a DSSP annotation from the PDB file, but if you h
 ### Choosing a subregion:
 If you want SSDraw to draw only a portion of your alignment, you can specify the start and/or end points using the --start and --end options respectively. The argument for these options correspond to the index of the alignment position, not to the residue position numbers. See [example 2](#example-2-score-by-conservation).
 
+### Consurf
+We now provide the option to color by consurf grade using --consurf option:
+```
+python3 ../SSDraw.py --fasta 2n1v.fasta --name 2n1v --pdb 2n1v.pdb --output 2n1v_consurf --consurf 2n1v_nscores.txt
+```
+The code can read in either the consurf grades file or a rate4site with raw scores. The raw scores will be converted into grades according to the algorithm used by Consurf: https://github.com/Rostlab/ConSurf
+
 ### Helper Scripts
-We now provide two helper scripts to assist the user in stacking multiple diagrams.
+We now provide a helper script to assist the user in stacking multiple diagrams.
 ```
 python3 run_multiple_pdbs_on_one_msa.py --input [input script] --output [output directory]
 ```
 run_multiple_pdbs_on_one_msa.py will run SSDraw for multiple pdbs from a single multiple sequence alignment, saving the diagrams to a specified output directory. Finally, the script will create a composite stacked image of the diagrams. An example input script is shown in SSDraw/example_run.txt.
-
-```
-python3 combine_images.py [list of images]
-```
-This script creates a composite stacked image in png format of a list of SSDraw diagrams. To use this script, you will already have had to run SSDraw to generate individual diagrams. 
-
 
