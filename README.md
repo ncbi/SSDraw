@@ -84,12 +84,12 @@ Normally, SSDraw will generate a DSSP annotation from the PDB file, but if you h
 ### Choosing a subregion:
 If you want SSDraw to draw only a portion of your alignment, you can specify the start and/or end points using the --start and --end options respectively. The argument for these options correspond to the index of the alignment position, not to the residue position numbers. See [example 2](#example-2-score-by-conservation).
 
-### Consurf
-We now provide the option to color by consurf grade using --consurf option:
+### ConSurf
+We now provide the option to color by ConSurf grade using --consurf option:
 ```
 python3 ../SSDraw.py --fasta 2n1v.fasta --name 2n1v --pdb 2n1v.pdb --output 2n1v_consurf --consurf 2n1v_nscores.txt
 ```
-The code can read in either the consurf grades file or a rate4site with raw scores. The raw scores will be converted into grades according to the algorithm used by Consurf: https://github.com/Rostlab/ConSurf
+The code can read in either the ConSurf grades file or a Rate4Site file with raw scores. The raw scores will be converted into grades according to the algorithm used by ConSurf: https://github.com/Rostlab/ConSurf
 
 ### Helper Scripts
 We now provide a helper script to assist the user in stacking multiple diagrams.
