@@ -87,8 +87,9 @@ If you want SSDraw to draw only a portion of your alignment, you can specify the
 ### ConSurf
 We now provide the option to color by ConSurf grade using --consurf option:
 ```
-python3 ../SSDraw.py --fasta 2n1v.fasta --name 2n1v --pdb 2n1v.pdb --output 2n1v_consurf --consurf 2n1v_nscores.txt
+python3 ../SSDraw.py --fasta 2n1v.fasta --name 2n1v --pdb 2n1v.pdb --output 2n1v_consurf --consurf 2n1v_nscores.txt --ticks 5
 ```
+![ConSurf](imgs/2n1v_consurf.png)
 The code can read in either the ConSurf grades file or a Rate4Site file with raw scores. The raw scores will be converted into grades according to the algorithm used by ConSurf: https://github.com/Rostlab/ConSurf
 
 ### Helper Scripts
