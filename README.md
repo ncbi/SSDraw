@@ -97,5 +97,5 @@ We now provide a helper script to assist the user in stacking multiple diagrams.
 ```
 python3 run_multiple_pdbs_on_one_msa.py --input [input script] --output [output directory]
 ```
-run_multiple_pdbs_on_one_msa.py will run SSDraw for multiple pdbs from a single multiple sequence alignment, saving the diagrams to a specified output directory. Finally, the script will create a composite stacked image of the diagrams. An example input script is shown in SSDraw/example_run.txt.
+run_multiple_pdbs_on_one_msa.py will run SSDraw for multiple pdbs from a single multiple sequence alignment, saving the diagrams to a specified output directory. Finally, the script will create a composite stacked image of the diagrams. An example input script is shown in SSDraw/examples/example_run.txt.
 
