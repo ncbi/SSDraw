@@ -16,8 +16,8 @@ You can find the package on PyPi [here](https://pypi.org/project/SSDraw/)
 
 ## Instructions
 SSDraw provides two subcommands:
-single: Run SSDraw on a single FASTA/PDB pair
-multi: Run SSDraw for multiple PDBs from one MSA
+1. single: Run SSDraw on a single FASTA/PDB pair
+2. multi: Run SSDraw for multiple PDBs from one MSA
 
 SSDraw single requires 4 arguments:
 1. --fasta: the file name sequence or alignment file in fasta format.

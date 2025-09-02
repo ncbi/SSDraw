@@ -93,6 +93,18 @@ def get_args(
         default="",
         help="consurf or rate4site file to color image with. If rate4site file is given, SSDraw will convert raw scores to grades.",
     )
+    single_parser.add_argument(
+        "--fontsize",
+        default=12,
+        type=int,
+        help="font size for residue numbers",
+    )
+    single_parser.add_argument(
+        "--fontcolor",
+        default="black",
+        type=str,
+        help="font color for residue numbers",
+    )
     single_parser.set_defaults(func=lambda args: SSDraw(args))
 
     multi_parser = subparsers.add_parser(

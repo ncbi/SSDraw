@@ -1065,9 +1065,9 @@ def SSDraw(
             aa,
             ha="center",
             va="bottom",
-            fontsize=15,
+            fontsize=args.fontsize,
             fontfamily="monospace",
-            color="black",
+            color=args.fontcolor,
         )
 
     plt.ylim([0.5, 3])
