@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "SSDraw"
-version = "0.1.8"
+version = "0.2.0"
 description = "Tool for creating publication-quality protein secondary structure diagrams"
 authors = [
     {name = "Ethan Chen"},

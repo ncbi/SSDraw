@@ -328,7 +328,7 @@ def SS_breakdown(
 
     SS_equivalencies = {
         "H": ["H"],
-        "-": [" "],
+        "-": ["-"],
         "S": [" ", "S", "C", "T", "G", "I", "P"],
         " ": [" ", "S", "C", "T", "G", "I", "P"],
         "C": [" ", "S", "C", "T", "G", "I", "P"],
@@ -340,7 +340,12 @@ def SS_breakdown(
         "B": ["E", "B"],
     }
 
-    cur_SSDict = {"H": "helix", "E": "strand", "B": "strand"}
+    cur_SSDict = {
+        "H": "helix",
+        "E": "strand",
+        "B": "strand",
+        "-": "break",
+    }
 
     for i in range(len(ss)):
         if i == 0:
