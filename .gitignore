@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Environment
+.env
+.venv/
+env/
+venv/
+*.env
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Test/coverage
+.coverage
+htmlcov/
+.cache/
+pytest_cache/
+
+# Misc
+*.bak
+*.swp
+*.png
+*.svg

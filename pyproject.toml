@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SSDraw"
+version = "0.2.0"
+description = "Tool for creating publication-quality protein secondary structure diagrams"
+authors = [
+    {name = "Ethan Chen"},
+    {name = "Lauren Porter", email = "lauren.porter@nih.gov"},
+    {name = "Pramesh Sharma", email = "pramesh.sharma@nih.gov"}
+]
+readme = "README.md"
+license = {file = "LICENSE.md"}
+
+dependencies = [
+    "biopython>=1.81",
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+    "torch>=2.0.1",
+    "pydssp",
+]
+
+[project.scripts]
+ssdraw = "SSDraw.cli:main"
+
+[tool.setuptools.package-data]
+"SSDraw" = ["LICENSE.md", "README.md", "imgs/*"]

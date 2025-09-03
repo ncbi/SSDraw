@@ -1,0 +1,10 @@
+biopython
+matplotlib
+numpy
+torch
+pydssp
+nomkl
+
+black
+flake8
+autopep8
