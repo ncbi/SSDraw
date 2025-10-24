@@ -6,5 +6,6 @@ nav:
     - Modules:
         - single: 'commands/single.md'
         - multi: 'commands/multi.md'
+    - Troubleshooting: 'troubleshooting.md'
 
 theme: readthedocs
