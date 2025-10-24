@@ -1,0 +1,10 @@
+site_name: SSDraw
+
+nav:
+    - Home: 'index.md'
+    - Getting Started: 'getting-started.md'
+    - Modules:
+        - single: 'commands/single.md'
+        - multi: 'commands/multi.md'
+
+theme: readthedocs

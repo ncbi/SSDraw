@@ -21,3 +21,12 @@ twine-upload:
 
 remove-dist:
 	rm -rf dist/*
+
+generate-cli-docs:
+	python3 scripts/generate_docs.py
+
+serve-docs: generate-cli-docs
+	mkdocs serve
+
+install-docs:
+	pip install '.[docs]'
