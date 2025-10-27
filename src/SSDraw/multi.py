@@ -15,9 +15,7 @@ import matplotlib.pyplot as plt
 import SSDraw.core as SSDraw
 
 
-def SSDraw_layer(
-    fastas, pdbs, names, output_names, output_dir, additional_params
-):
+def SSDraw_layer(fastas, pdbs, names, output_names, output_dir, additional_params):
     nlines = len(pdbs)
 
     # Plot secondary structure chunks
@@ -171,9 +169,7 @@ def SSDraw_layer(
         if loop_coords[j][1][1] > maxsize:
             maxsize = loop_coords[j][1][1]
 
-    fig, ax = plt.subplots(
-        ncols=1, figsize=(sz * 0.7, ((maxsize - minsize) * 0.37))
-    )
+    fig, ax = plt.subplots(ncols=1, figsize=(sz * 0.7, ((maxsize - minsize) * 0.37)))
 
     for i in range(len(output_names)):
         ax.annotate(
@@ -287,9 +283,5 @@ def run_multiple_pdbs_on_one_msa(args):
         additional_params,
     )
 
-    print(
-        "Creating composite image {:}.{:}".format(
-            args.output, output_file_type
-        )
-    )
+    print("Creating composite image {:}.{:}".format(args.output, output_file_type))
     plt.savefig("{:}.{:}".format(args.output, output_file_type))

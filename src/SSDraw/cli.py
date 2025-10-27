@@ -23,15 +23,20 @@ def get_args(
         "-f",
         "--fasta",
         help="(required) sequence/alignment file in fasta format",
+        required=True,
     )
     single_parser.add_argument("-p", "--pdb", help="(required) pdb file")
     single_parser.add_argument(
         "-n",
         "--name",
         help="(required) id of the protein in the alignment file",
+        required=True,
     )
     single_parser.add_argument(
-        "-o", "--output", help="(required) name for output file"
+        "-o",
+        "--output",
+        help="(required) name for output file",
+        required=True,
     )
     single_parser.add_argument(
         "--SS",
@@ -116,9 +121,7 @@ def get_args(
     multi_parser.add_argument(
         "-o", "--output", required=True, help="Name of output directory"
     )
-    multi_parser.set_defaults(
-        func=lambda args: run_multiple_pdbs_on_one_msa(args)
-    )
+    multi_parser.set_defaults(func=lambda args: run_multiple_pdbs_on_one_msa(args))
 
     return parser.parse_args(argv)
 
