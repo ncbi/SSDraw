@@ -121,7 +121,9 @@ def get_args(
     multi_parser.add_argument(
         "-o", "--output", required=True, help="Name of output directory"
     )
-    multi_parser.set_defaults(func=lambda args: run_multiple_pdbs_on_one_msa(args))
+    multi_parser.set_defaults(
+        func=lambda args: run_multiple_pdbs_on_one_msa(args)
+    )
 
     return parser.parse_args(argv)
 

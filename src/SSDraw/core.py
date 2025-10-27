@@ -67,7 +67,9 @@ def read_consurf_grad(input_file: str) -> T.Tuple[str, T.List[int]]:
 
 def check_consurf_file(file: str) -> T.Optional[str]:
     consurf_pattern = r"^\s*?\d+\s+(\w)\s+\S+\s+\S+\s+(\d)\S*\s+-?\d+.\d+,\s+-?\d+.\d+\s+\d,\d\s+\d+\/\d+\s+\S+"
-    r4s_pattern = r"^\s*?\d+\s+(\w)\s+(\S+)\s+\[\s*\S+,\s*\S+\]\s+\S+\s+\d+\/\d+"
+    r4s_pattern = (
+        r"^\s*?\d+\s+(\w)\s+(\S+)\s+\[\s*\S+,\s*\S+\]\s+\S+\s+\d+\/\d+"
+    )
     with open(file, "r") as f:
         for line in f:
             if re.match(consurf_pattern, line):
@@ -968,7 +970,9 @@ def SSDraw(
     nlines = 1
 
     # Parse color and scoring args
-    CMAP, bvals = parse_color(args, seq_wgaps, pdbseq, bfactors, msa, extra_gaps)
+    CMAP, bvals = parse_color(
+        args, seq_wgaps, pdbseq, bfactors, msa, extra_gaps
+    )
 
     mat = np.tile(NormalizeData(bvals), (100, 1))
 
@@ -1098,7 +1102,11 @@ def SSDraw(
 
     ax.set_aspect(0.5)
 
-    print("Saving output to {:}.{:}...".format(args.output, args.output_file_type))
+    print(
+        "Saving output to {:}.{:}...".format(
+            args.output, args.output_file_type
+        )
+    )
     plt.savefig(
         args.output + "." + args.output_file_type,
         bbox_inches="tight",
