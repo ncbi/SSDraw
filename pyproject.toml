@@ -22,6 +22,11 @@ dependencies = [
     "pydssp",
 ]
 
+[project.optional-dependencies]
+tests = [
+    "pytest"
+]
+
 [project.scripts]
 ssdraw = "SSDraw.cli:main"
 
