@@ -16,9 +16,7 @@ def generate_help(command, filename):
 
     with open(f"docs/commands/{filename}.md", "w") as doc_file:
         doc_file.write(f"# SSDraw {command} Command\n\n")
-        doc_file.write(
-            f"This section documents the `ssdraw {command}` command.\n\n"
-        )
+        doc_file.write(f"This section documents the `ssdraw {command}` command.\n\n")
         doc_file.write("```bash\n")
         doc_file.write(help_output)
         doc_file.write("```\n")

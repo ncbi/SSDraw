@@ -1,5 +1,5 @@
 format:
-	black --line-length 79 .
+	black .
 
 lint:
 	flake8 .
