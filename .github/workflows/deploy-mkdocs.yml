@@ -26,7 +26,7 @@ jobs:
       - name: Build site
         run: mkdocs build --site-dir site
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./site
 
@@ -38,4 +38,4 @@ jobs:
       id-token: write
     steps:
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
