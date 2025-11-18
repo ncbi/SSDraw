@@ -4,6 +4,8 @@ SSDraw is a program that generates publication-quality protein secondary structu
 
 SSDraw also has a colab notebook available at https://colab.research.google.com/github/ethanchen1301/SSDraw/blob/main/SSDraw.ipynb (only usable for Chrome)
 
+Access to richer docs and common troubleshooting issues related to SSDraw can be found [here](https://ncbi.github.io/SSDraw/)
+
 ## Installation
 
 The easiest way to install SSDraw is via pip:
