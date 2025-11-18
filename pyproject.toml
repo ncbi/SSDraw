@@ -23,8 +23,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-tests = [
-    "pytest"
+docs = [
+    "mkdocs",
 ]
 
 [project.scripts]
